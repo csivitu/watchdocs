@@ -1,11 +1,15 @@
 {
   "name": "watchdocs",
   "displayName": "watchdocs",
+  "publisher": "watchdocs",
   "description": "auto detect dependencies and show offical docs",
   "version": "0.0.1",
   "engines": {
-    "vscode": "^1.109.0"
+    "vscode": "^1.90.0"
   },
+  "activationEvents": [
+    "onView:watchdocs.sidebar"
+  ],
   "categories": [
     "Other"
   ],
@@ -26,7 +30,7 @@
         {
           "id": "watchdocs",
           "title": "WatchDocs",
-          "icon": "resources/watchdocs.svg"
+          "icon": "resources/watchdocs-v2.svg"
         }
       ]
     },
@@ -35,7 +39,7 @@
         {
           "id": "watchdocs.sidebar",
           "name": "Project Docs",
-          "icon": "resources/watchdocs.svg"
+          "icon": "resources/watchdocs-v2.svg"
         }
       ]
     }
