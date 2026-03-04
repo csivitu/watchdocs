@@ -1,0 +1,1 @@
+// to dispatch to correct parser (eg - package.json → parsePackageJson, Cargo.toml → parseCargoToml)

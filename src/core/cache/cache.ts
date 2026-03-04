@@ -1,0 +1,1 @@
+// to store results keyed by manifest hash
