@@ -1,0 +1,12 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+var parse_package_json_1 = require("../core/parsers/parse-package-json");
+var parse_requirements_1 = require("../core/parsers/parse-requirements");
+console.log("----- Testing package.json parser -----");
+var packageContent = "\n{\n  \"dependencies\": {\n    \"react\": \"^18.2.0\",\n    \"next\": \"14.1.0\"\n  }\n}\n";
+var pkgResult = (0, parse_package_json_1.parsePackageJson)(packageContent);
+console.log(pkgResult);
+console.log("\n----- Testing requirements.txt parser -----");
+var requirementsContent = "\nflask==2.3.0\nnumpy==1.26.0\npandas\n";
+var reqResult = (0, parse_requirements_1.parseRequirementsTxt)(requirementsContent);
+console.log(reqResult);
