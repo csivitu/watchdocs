@@ -1,0 +1,19 @@
+{
+  "flutter": "https://docs.flutter.dev/",
+  "getx": "https://pub.dev/packages/get",
+  "provider": "https://pub.dev/packages/provider",
+  "riverpod": "https://pub.dev/packages/riverpod",
+  "dio": "https://pub.dev/packages/dio",
+  "bloc": "https://pub.dev/packages/bloc",
+  "go_router": "https://pub.dev/packages/go_router",
+  "cached_network_image": "https://pub.dev/packages/cached_network_image",
+  "flutter_bloc": "https://pub.dev/packages/flutter_bloc",
+  "intl": "https://pub.dev/packages/intl",
+  "path_provider": "https://pub.dev/packages/path_provider",
+  "shared_preferences": "https://pub.dev/packages/shared_preferences",
+  "url_launcher": "https://pub.dev/packages/url_launcher",
+  "http": "https://pub.dev/packages/http",
+  "flutter_secure_storage": "https://pub.dev/packages/flutter_secure_storage",
+  "firebase_core": "https://pub.dev/packages/firebase_core",
+  "cloud_firestore": "https://pub.dev/packages/cloud_firestore"
+}
