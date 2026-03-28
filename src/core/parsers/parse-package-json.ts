@@ -5,16 +5,18 @@ export function parsePackageJson(content: string): Dependency[] {
 
   try {
     const data = JSON.parse(content)
-
-    const dependencies = data.dependencies || {}
     const result: Dependency[] = []
 
-    for (const name in dependencies) {
-      result.push({
-        name,
-        version: dependencies[name] || "unknown",
-        ecosystem: "npm"
-      })
+    const sections = ["dependencies", "devDependencies"]
+    for (const sectionName of sections) {
+      const deps = data[sectionName] || {}
+      for (const name in deps) {
+        result.push({
+          name,
+          version: deps[name] || "unknown",
+          ecosystem: "npm"
+        })
+      }
     }
 
     return result
