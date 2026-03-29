@@ -16,7 +16,7 @@ export async function scanWorkspace() : Promise<ManifestFile[]> {
             case uriPath.endsWith("requirements.txt"):
                 return { uri, type: "pip"}
             case uriPath.endsWith("go.mod"):
-                return { uri, type: "go"}
+                return { uri, type: "go"} 
             default:
                 return { uri, type: "unknown"}
         }
