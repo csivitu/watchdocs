@@ -1,11 +1,17 @@
 // to registry lookup; Gemini fallback
-import "dotenv/config";
-import { Dependency, DocResult, DocResolver } from "../../models.js";
+import * as vscode from "vscode";
+import { Dependency, DocResult, DocResolver } from "../../models";
 
 export class GeminiResolver implements DocResolver {
+  private static API_KEY_SECRET = "gemini-api-key";
+  constructor(private context: vscode.ExtensionContext) {}
   async resolve(deps: Dependency[]): Promise<DocResult[]> {
+    const apiKey = await this.context.secrets.get(GeminiResolver.API_KEY_SECRET);
+    if (!apiKey) {
+      throw new Error("No Gemini API key. Please set one in sidebar.");
+    }
     const { GoogleGenAI } = await import("@google/genai");
-    const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
+    const ai = new GoogleGenAI({ apiKey });
 
     const prompt = `
       You are a documentation link resolver.
@@ -21,7 +27,7 @@ export class GeminiResolver implements DocResolver {
     `;
 
     const response = await ai.models.generateContent({
-      model: "gemini-2.5-flash",
+      model: "gemini-3.1-flash-lite-preview",
       contents: prompt,
     });
 
@@ -46,6 +52,22 @@ export class GeminiResolver implements DocResolver {
       docUrl: isValidUrl(item.docUrl) ? item.docUrl : null,
       source: "llm" as const,
     }));
+  }
+
+  static async setApiKey(context: vscode.ExtensionContext): Promise<void> {
+    const apiKey = await vscode.window.showInputBox({
+      prompt: "Enter your Gemini API Key",
+      password: true,
+      placeHolder: "GeminiKey"
+    });
+    if (apiKey) {
+      await context.secrets.store(GeminiResolver.API_KEY_SECRET, apiKey);
+      vscode.window.showInformationMessage("Gemini API Key saved!");
+    }
+  }
+  static async hasApiKey(context: vscode.ExtensionContext): Promise<boolean> {
+    const key = await context.secrets.get(GeminiResolver.API_KEY_SECRET);
+    return !!key;
   }
 }
 

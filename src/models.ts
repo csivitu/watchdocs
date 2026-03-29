@@ -1,3 +1,5 @@
+import { Uri } from 'vscode';
+
 export type Dependency = {
   name: string
   version: string | null
@@ -13,4 +15,9 @@ export type DocResult = {
 
 export interface DocResolver {
   resolve(deps: Dependency[]): Promise<DocResult[]>
+}
+
+export interface ManifestFile {
+  uri : Uri
+  type : "pip" | "npm" | "go" | "unknown"
 }

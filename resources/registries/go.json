@@ -1,0 +1,20 @@
+{
+  "gin": "https://gin-gonic.com/docs/",
+  "echo": "https://echo.labstack.com/",
+  "gorm": "https://gorm.io/docs/",
+  "beego": "https://beego.vip/docs/intro/",
+  "fiber": "https://pkg.go.dev/fiber",
+  "chi": "https://pkg.go.dev/chi",
+  "zerolog": "https://pkg.go.dev/zerolog",
+  "zap": "https://pkg.go.dev/zap",
+  "viper": "https://pkg.go.dev/viper",
+  "cobra": "https://pkg.go.dev/cobra",
+  "gorilla/mux": "https://pkg.go.dev/gorilla/mux",
+  "logrus": "https://pkg.go.dev/logrus",
+  "jwt-go": "https://pkg.go.dev/jwt-go",
+  "go-redis": "https://pkg.go.dev/go-redis",
+  "testify": "https://pkg.go.dev/testify",
+  "golang.org/x/crypto": "https://pkg.go.dev/golang.org/x/crypto",
+  "golang.org/x/net": "https://pkg.go.dev/golang.org/x/net",
+  "golang.org/x/sync": "https://pkg.go.dev/golang.org/x/sync"
+}
