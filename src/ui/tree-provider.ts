@@ -1,16 +1,42 @@
 import * as vscode from "vscode";
-import { Dependency, DocResult } from "../models";
+import { Dependency } from "../models";
 import { GeminiResolver } from "../core/resolver/gemini-resolver";
 import { resolver } from "../core/resolver/resolver";
+import { scanWorkspace } from "../core/scanner/scanner";
+import { readFile } from "../core/reader/reader";
+import { parsePackageJson, parseRequirementsTxt } from "../core/parsers";
 
 export class DocsTreeProvider implements vscode.TreeDataProvider<vscode.TreeItem> {
   private _onDidChangeTreeData = new vscode.EventEmitter<vscode.TreeItem | undefined>();
   readonly onDidChangeTreeData = this._onDidChangeTreeData.event;
 
+  private scannedDeps: Dependency[] | null = null;
+
   constructor(private context: vscode.ExtensionContext) {}
 
   refresh(): void {
     this._onDidChangeTreeData.fire(undefined);
+  }
+
+  async scan(): Promise<void> {
+    const manifests = await scanWorkspace();
+    const allDeps: Dependency[] = [];
+
+    for (const manifest of manifests) {
+      const content = await readFile(manifest.uri);
+      let deps: Dependency[] = [];
+
+      if (manifest.type === "npm") {
+        deps = parsePackageJson(content);
+      } else if (manifest.type === "pip") {
+        deps = parseRequirementsTxt(content);
+      }
+
+      allDeps.push(...deps);
+    }
+
+    this.scannedDeps = allDeps;
+    this.refresh();
   }
 
   getTreeItem(element: vscode.TreeItem): vscode.TreeItem {
@@ -24,34 +50,34 @@ export class DocsTreeProvider implements vscode.TreeDataProvider<vscode.TreeItem
 
     const hasApiKey = await GeminiResolver.hasApiKey(this.context);
 
-    const items: vscode.TreeItem[] = [
-      new DependencyItem("Scan Dependencies", "Action", vscode.TreeItemCollapsibleState.None, {
-        command: "watchdocs.scan",
-        title: "Scan Dependencies"
-      }, "play")
-    ];
+    const items: vscode.TreeItem[] = [];
 
-    // Mock dependencies
-    const mockDeps: Dependency[] = [
-      { name: "react", version: "18.2.0", ecosystem: "npm" },
-      { name: "express", version: "4.18.2", ecosystem: "npm" }
-    ];
+    items.push(new DependencyItem("Scan Dependencies", "Action", vscode.TreeItemCollapsibleState.None, {
+      command: "watchdocs.scan",
+      title: "Scan Dependencies"
+    }, "play"));
 
-    const results = await resolver(mockDeps, this.context);
+    const deps = this.scannedDeps || [];
 
-    results.forEach(result => {
-      items.push(new DependencyItem(
-        result.name,
-        result.version || "unknown",
-        vscode.TreeItemCollapsibleState.None,
-        result.docUrl ? {
-          command: "vscode.open",
-          title: "Open Docs",
-          arguments: [vscode.Uri.parse(result.docUrl)]
-        } : undefined,
-        result.docUrl ? "library" : "question"
-      ));
-    });
+    if (deps.length > 0) {
+      const results = await resolver(deps, this.context);
+
+      results.forEach(result => {
+        items.push(new DependencyItem(
+          result.name,
+          result.version || "unknown",
+          vscode.TreeItemCollapsibleState.None,
+          result.docUrl ? {
+            command: "vscode.open",
+            title: "Open Docs",
+            arguments: [vscode.Uri.parse(result.docUrl)]
+          } : undefined,
+          result.docUrl ? "library" : "question"
+        ));
+      });
+    } else if (this.scannedDeps !== null) {
+      items.push(new vscode.TreeItem("No dependencies found", vscode.TreeItemCollapsibleState.None));
+    }
 
     items.push(new ApiKeyItem(hasApiKey, this.context));
 

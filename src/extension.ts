@@ -6,8 +6,8 @@ export function activate(context: vscode.ExtensionContext) {
   const provider = new DocsTreeProvider(context);
   vscode.window.registerTreeDataProvider("watchdocs.sidebar", provider);
 
-  const scanCommand = vscode.commands.registerCommand("watchdocs.scan", () => {
-    vscode.window.showInformationMessage("WatchDocs: Scanning dependencies...");
+  const scanCommand = vscode.commands.registerCommand("watchdocs.scan", async () => {
+    await provider.scan();
   });
 
   const helloCommand = vscode.commands.registerCommand("watchdocs.helloWorld", () => {
