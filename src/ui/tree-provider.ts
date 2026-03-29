@@ -1,5 +1,5 @@
 import * as vscode from "vscode";
-import { Dependency } from "../models";
+import { Dependency, DocResult } from "../models";
 import { GeminiResolver } from "../core/resolver/gemini-resolver";
 import { resolver } from "../core/resolver/resolver";
 import { scanWorkspace } from "../core/scanner/scanner";
@@ -11,6 +11,7 @@ export class DocsTreeProvider implements vscode.TreeDataProvider<vscode.TreeItem
   readonly onDidChangeTreeData = this._onDidChangeTreeData.event;
 
   private scannedDeps: Dependency[] | null = null;
+  private resolvedResults: DocResult[] | null = null;
 
   constructor(private context: vscode.ExtensionContext) {}
 
@@ -19,9 +20,17 @@ export class DocsTreeProvider implements vscode.TreeDataProvider<vscode.TreeItem
   }
 
   async scan(): Promise<void> {
-    const manifests = await scanWorkspace();
-    const allDeps: Dependency[] = [];
 
+    const manifests = await scanWorkspace();
+    if (manifests.length === 0) {
+      this.scannedDeps = [];
+      this.resolvedResults = [];
+      this.refresh();
+      vscode.window.showInformationMessage("No package.json or requirements.txt found");
+      return;
+    }
+
+    const allDeps: Dependency[] = [];
     for (const manifest of manifests) {
       const content = await readFile(manifest.uri);
       let deps: Dependency[] = [];
@@ -36,6 +45,10 @@ export class DocsTreeProvider implements vscode.TreeDataProvider<vscode.TreeItem
     }
 
     this.scannedDeps = allDeps;
+
+    this.resolvedResults = await resolver(allDeps, this.context);
+
+    vscode.window.showInformationMessage(`Found ${allDeps.length} dependencies`);
     this.refresh();
   }
 
@@ -49,7 +62,6 @@ export class DocsTreeProvider implements vscode.TreeDataProvider<vscode.TreeItem
     }
 
     const hasApiKey = await GeminiResolver.hasApiKey(this.context);
-
     const items: vscode.TreeItem[] = [];
 
     items.push(new DependencyItem("Scan Dependencies", "Action", vscode.TreeItemCollapsibleState.None, {
@@ -57,12 +69,8 @@ export class DocsTreeProvider implements vscode.TreeDataProvider<vscode.TreeItem
       title: "Scan Dependencies"
     }, "play"));
 
-    const deps = this.scannedDeps || [];
-
-    if (deps.length > 0) {
-      const results = await resolver(deps, this.context);
-
-      results.forEach(result => {
+    if (this.resolvedResults && this.resolvedResults.length > 0) {
+      this.resolvedResults.forEach(result => {
         items.push(new DependencyItem(
           result.name,
           result.version || "unknown",
@@ -72,10 +80,10 @@ export class DocsTreeProvider implements vscode.TreeDataProvider<vscode.TreeItem
             title: "Open Docs",
             arguments: [vscode.Uri.parse(result.docUrl)]
           } : undefined,
-          result.docUrl ? "library" : "question"
+          result.docUrl ? "link-external" : "question"
         ));
       });
-    } else if (this.scannedDeps !== null) {
+    } else if (this.scannedDeps !== null && this.scannedDeps.length === 0) {
       items.push(new vscode.TreeItem("No dependencies found", vscode.TreeItemCollapsibleState.None));
     }
 

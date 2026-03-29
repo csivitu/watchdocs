@@ -1,4 +1,4 @@
-import { Uri, workspace } from "vscode";
+import { Uri, workspace, extensions } from "vscode";
 import { DocResult, Dependency } from "../../models";
 import { getRegistry, setRegistry } from "../cache/cache";
 
@@ -6,8 +6,9 @@ async function loadRegistry(ecosystem: string) : Promise<Record<string, string> 
     const cached = getRegistry(ecosystem)
     if(cached){ return cached }
     const fileName = `${ecosystem}.json`
-    const filePath = `resources/registries/${fileName}`
-    const uri = Uri.file(filePath)
+    const ext = extensions.getExtension("watchdocs.watchdocs")
+    if (!ext) return undefined
+    const uri = Uri.joinPath(ext.extensionUri, "resources", "registries", fileName)
     try{
         const content = await workspace.fs.readFile(uri)
         const text = new TextDecoder("utf-8").decode(content)
