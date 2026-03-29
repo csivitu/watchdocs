@@ -1,8 +1,9 @@
 import { Dependency, DocResult } from "../../models";
 import { GeminiResolver } from "./gemini-resolver";
 import { regisrtyResolver } from "./registry-resolver";
+import { ExtensionContext } from "vscode";
 
-export async function resolver(deps: Dependency[]): Promise<DocResult[]>{
+export async function resolver(deps: Dependency[], context: ExtensionContext): Promise<DocResult[]>{
     const registryResults = await Promise.all(deps.map(regisrtyResolver));
     const found: DocResult[] = []
     const missingDeps: Dependency[] = []
@@ -15,9 +16,18 @@ export async function resolver(deps: Dependency[]): Promise<DocResult[]>{
         }
     })
     if(missingDeps.length > 0){
-        const geminiResolver = new GeminiResolver();
-        const geminiResults = await geminiResolver.resolve(missingDeps)
-        return [...found, ...geminiResults]
+        const geminiResolver = new GeminiResolver(context);
+        try {
+            const geminiResults = await geminiResolver.resolve(missingDeps)
+            return [...found, ...geminiResults]
+        } catch {
+            return [...found, ...missingDeps.map(d => ({
+                name: d.name,
+                version: d.version,
+                docUrl: null,
+                source: "unknown" as const
+            }))]
+        }
     }
     return found
 }
