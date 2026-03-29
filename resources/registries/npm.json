@@ -88,5 +88,13 @@
   "joi": "https://github.com/hapijs/joi#readme",
   "moment": "https://momentjs.com",
   "chalk": "https://github.com/chalk/chalk#readme",
-  "debug": "https://github.com/debug-js/debug#readme"
+  "debug": "https://github.com/debug-js/debug#readme",
+  "lucide-react": "https://lucide.dev/guide/packages/lucide-react",
+  "next": "https://nextjs.org/docs",
+  "husky": "https://typicode.github.io/husky/",
+  "lenis": "https://github.com/darkroomengineering/lenis",
+  "gsap": "https://gsap.com/docs/v3/",
+  "vaul": "https://vaul.emilkowal.ski/",
+  "eslint": "https://eslint.org/docs/latest/",
+  "prettier": "https://prettier.io/docs/en/"
 }
