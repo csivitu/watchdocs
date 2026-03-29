@@ -46,9 +46,19 @@ export class DocsTreeProvider implements vscode.TreeDataProvider<vscode.TreeItem
 
     this.scannedDeps = allDeps;
 
-    this.resolvedResults = await resolver(allDeps, this.context);
+    let statusMessage = vscode.window.setStatusBarMessage("Fetching docs via Gemini...")
 
-    vscode.window.showInformationMessage(`Found ${allDeps.length} dependencies`);
+    this.resolvedResults = await resolver(allDeps, this.context, (partialResults) => {
+      this.resolvedResults = partialResults
+      this.refresh()
+    })
+
+    statusMessage.dispose()
+
+    if (allDeps.length > 0) {
+      vscode.window.showInformationMessage(`Found ${allDeps.length} dependencies`)
+    }
+    
     this.refresh();
   }
 
