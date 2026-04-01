@@ -10,7 +10,7 @@ export type DocResult = {
   name: string
   version: string | null
   docUrl: string | null
-  source: "registry" | "llm" | "unknown"
+  source: "registry" | "llm" | "unknown" | "online-registry"
 }
 
 export interface DocResolver {
