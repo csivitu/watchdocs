@@ -31,12 +31,12 @@ WatchDocs is a VS Code extension that streamlines development by automatically s
 ## Features
 
 - **Auto Dependency Detection** - Scans workspace for `package.json` and `requirements.txt`
-- **Hybrid Resolution Engine** - Fast local registry lookup + AI fallback for unknown packages
+- **Three-Tier Resolution Engine** - Local registry cache → Online NPM registry → AI fallback for maximum coverage
 - **Multi-Ecosystem Support** - npm, pip (current) & Go, Cargo, Maven, Pub (future)
 - **Interactive Sidebar** - View all dependencies in one place with one-click doc access
 - **Secure API Key Storage** - Gemini API key stored in VS Code's encrypted secrets storage
 - **Progressive UI Updates** - Results appear incrementally as they're resolved
-- **Offline-First** - Pre-populated registry of 250+ popular packages works without API key
+- **Smart Caching** - 260+ packages in local registry (offline), with online NPM fallback for real-time resolution
 
 ---
 
@@ -153,9 +153,10 @@ No default keyboard shortcuts. You can add custom keybindings in `keybindings.js
 
 ### Overview
 
-WatchDocs uses a **two-tier hybrid resolution strategy**:
-1. **Registry Lookup** (fast, offline-capable) - Checks local JSON registries first
-2. **Gemini AI Fallback** (comprehensive, requires API key) - Queries AI for unknown packages
+WatchDocs uses a **three-tier hybrid resolution strategy**:
+1. **Local Registry Cache** (fastest, offline-capable) - Checks pre-populated JSON registries (260+ packages)
+2. **Online NPM Registry** (fast, requires internet) - Fetches homepage URLs directly from npmjs.org for npm packages
+3. **Gemini AI Fallback** (comprehensive, requires API key) - Queries AI for packages not found in previous tiers
 
 This approach ensures fast resolution for popular packages while maintaining coverage for niche dependencies.
 
@@ -165,7 +166,10 @@ This approach ensures fast resolution for popular packages while maintaining cov
 2. **File Discovery** - Scanner searches workspace for manifest files (`package.json`, `requirements.txt`)
 3. **File Reading** - Reader loads each manifest file using VS Code's virtual file system, by getting utf-8 then converting to string
 4. **Parsing** - Ecosystem-specific parsers extract dependency names and versions from string of each file
-5. **Resolution** - Main resolver orchestrates quick registry lookup + AI fallback lookup
+5. **Resolution** - Main resolver orchestrates three-tier lookup:
+   - Tier 1: Local registry cache (instant)
+   - Tier 2: Online NPM registry fetch (npm packages only)
+   - Tier 3: Gemini AI fallback (remaining packages)
 6. **Display** - Results rendered incrementally in sidebar tree view, with registry lookup at instant
 
 ### Core Components
@@ -177,8 +181,9 @@ This approach ensures fast resolution for popular packages while maintaining cov
 | `readFile()` | Reads file content from VS Code's virtual file system |
 | `parsePackageJson()` | Extracts npm dependencies from `package.json` |
 | `parseRequirementsTxt()` | Extracts pip dependencies from `requirements.txt` |
-| `resolver()` | Orchestrates two-tier resolution strategy |
+| `resolver()` | Orchestrates three-tier resolution strategy with progress callbacks |
 | `registryResolver()` | Looks up docs from local JSON registries |
+| `onlineNpmResolver()` | Fetches documentation URLs from npm registry in real-time |
 | `geminiResolver()` | Falls back to Gemini AI for unknown packages |
 | `cache` | In-memory caching for registry data |
 
@@ -197,28 +202,34 @@ parsePackageJson() / parseRequirementsTxt() → Dependency[]
     ↓
 resolver()
     ├─→ registryResolver() → DocResult[] (found)
-    └─→ geminiResolver() → DocResult[] (missing)
+    ├─→ onlineNpmResolver() → DocResult[] (npm packages)
+    └─→ geminiResolver() → DocResult[] (remaining)
     ↓
 Sidebar Tree View (clickable links)
 ```
 
 ### Walkthrough
 
-**Scenario:** User has a React + Express project
+**Scenario:** User has a React + Express + Axios project
 
 1. User clicks **Scan Dependencies** in sidebar
 2. Extension searches workspace, finds `/src/package.json`
-3. Reads file content: `{"dependencies": {"react": "^18.2.0", "express": "^4.18.0"}}`
+3. Reads file content: `{"dependencies": {"react": "^18.2.0", "express": "^4.18.0", "axios": "^1.6.0"}}`
 4. Parses to: `[{name: "react", version: "18.2.0", ecosystem: "npm"}, ...]`
 5. Calls `resolver()` with progress callback
-6. **Registry lookup:**
+6. **Tier 1 - Registry lookup:**
    - Loads `npm.json` from resources (cached in memory)
    - Finds "react" → `https://react.dev/`
    - Finds "express" → `https://expressjs.com/`
-7. Progress callback updates UI with found results
-8. No missing packages, so Gemini AI not invoked
-9. Sidebar displays both dependencies with external link icons
-10. User clicks "react" → browser opens `https://react.dev/`
+   - Package "axios" not found in local cache
+7. **Tier 2 - Online NPM lookup:** (for missing npm packages)
+   - Fetches `https://registry.npmjs.org/axios/latest`
+   - Extracts `homepage` field from response
+   - Returns `https://axios-http.com/`
+8. Progress callback updates UI with all found results
+9. No missing packages, so Gemini AI not invoked
+10. Sidebar displays all dependencies with external link icons
+11. User clicks "react" → browser opens `https://react.dev/`
 
 ---
 
@@ -279,8 +290,9 @@ watchdocs/
 | `scanner.ts` | File discovery with glob patterns and exclusions |
 | `reader.ts` | UTF-8 file reading via VS Code FS API |
 | `parsers/` | Ecosystem-specific dependency extraction |
-| `resolver.ts` | Two-tier resolution orchestration with progress callbacks |
+| `resolver.ts` | Three-tier resolution orchestration with progress callbacks |
 | `registry-resolver.ts` | Fast local JSON registry lookup with caching |
+| `online-npm-resolver.ts` | Real-time npm registry fetcher for homepage URLs |
 | `gemini-resolver.ts` | AI-based resolution using Google Gemini API |
 | `cache.ts` | Session-based in-memory registry caching |
 
@@ -292,6 +304,7 @@ watchdocs/
 - **Limited Pip Format Support** - Only handles `package==version` format; does not support `>=`, `<=`, `~=`, or extras
 - **No DevDependency Distinction** - npm `devDependencies` shown alongside `dependencies` without visual distinction
 - **Single Workspace Limitation** - Only scans first workspace folder in multi-root workspaces
+- **Online Resolver Limitations** - NPM online resolver only fetches `homepage` field; packages without homepage return null and proceed to AI fallback
 - **AI Response Parsing** - Gemini AI may occasionally return malformed JSON, causing fallback to "unknown"
 
 Report issues on the [GitHub repository](#).
@@ -300,7 +313,10 @@ Report issues on the [GitHub repository](#).
 
 ## Roadmap
 
-### v0.2.0 (Planned)
+### v0.2.0 (In Development)
+- [x] Implemented online NPM resolver for real-time registry fetches
+- [x] Three-tier resolution strategy (local → online → AI)
+- [x] Improved coverage for npm packages not in local registry
 - [ ] Implement `go.mod` parser
 - [ ] Add support for `Cargo.toml` (Rust)
 - [ ] Add support for `pom.xml` (Maven)
@@ -325,6 +341,12 @@ Report issues on the [GitHub repository](#).
 ---
 
 ## Release Notes
+
+### 0.2.0-alpha (In Development)
+- Implemented online NPM resolver for real-time registry fetches
+- Three-tier resolution strategy (local → online → AI)
+- Improved coverage for npm packages not in local registry
+- Updated documentation with new resolution flow
 
 ### 0.1.0-alpha (2026-03-30)
 - **Initial alpha release**
