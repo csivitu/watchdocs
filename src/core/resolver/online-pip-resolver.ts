@@ -2,8 +2,6 @@ import { DocResult, Dependency } from "../../models";
 
 //pypi response thoda nested so for ts clarity and keep type expilcit for pip
 
-//TODO: merge both resolvers into an abstraction to reduce code
-
 type PyPiProjectUrls = Record<string, string | null | undefined>;
 
 type PyPiPackageInfo = {
