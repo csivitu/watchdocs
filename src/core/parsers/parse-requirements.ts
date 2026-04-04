@@ -3,18 +3,29 @@ import { Dependency } from "../../models"
 export function parseRequirementsTxt(content: string): Dependency[] {
   if (!content.trim()) return []
 
+  const operators = ["==", ">=", "<=", "!=", "~=", ">", "<"]
   const lines = content.split("\n")
   const deps: Dependency[] = []
 
   for (const line of lines) {
     const trimmed = line.trim()
-    if (!trimmed) continue
+    if (!trimmed) continue 
 
-    const parts = trimmed.split("==")
+    let name = trimmed
+    let version = "unknown"
+    
+    for (const op of operators) {
+      if (trimmed.includes(op)) {
+        const parts = trimmed.split(op)
+        name = parts[0].trim()
+        version = parts[1].trim()
+        break
+      }
+    }
 
     deps.push({
-      name: parts[0],
-      version: parts[1] || "unknown",
+      name,
+      version,
       ecosystem: "pip"
     })
   }
