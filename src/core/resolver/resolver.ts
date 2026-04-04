@@ -2,6 +2,7 @@ import { Dependency, DocResult } from "../../models";
 import { GeminiResolver } from "./gemini-resolver";
 import { regisrtyResolver } from "./registry-resolver";
 import { onlineNpmResolver } from "./online-npm-resolver";
+import { onlinePipResolver } from "./online-pip-resolver";
 import { ExtensionContext } from "vscode";
 
 export async function resolver(deps: Dependency[], context: ExtensionContext, onProgress?: (results: DocResult[]) => void): Promise<DocResult[]>{
@@ -33,6 +34,19 @@ export async function resolver(deps: Dependency[], context: ExtensionContext, on
         onProgress?.(found);
         })
         
+    }
+
+    const pipDeps = missingDeps.filter(d => d.ecosystem === "pip")
+    if(pipDeps.length > 0){
+        const onlineResults = await Promise.all(pipDeps.map(onlinePipResolver))
+        onlineResults.forEach((r, i)=>{
+            if(r?.docUrl){
+                found.push(r)
+            } else {
+                forGeminiDeps.push(pipDeps[i])
+            }
+        onProgress?.(found);
+        })
     }
     
     if(forGeminiDeps.length > 0){
