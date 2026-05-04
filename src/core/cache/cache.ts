@@ -3,13 +3,13 @@
 const regisrtyCache = new Map<string, Record<string, string>>();
 
 export function setRegistry(ecosystem: string, registry: Record<string, string>): void {
-    regisrtyCache.set(ecosystem, registry)
+    regisrtyCache.set(ecosystem, registry);
 } 
 
 export function getRegistry(ecosystem: string) : Record<string, string> | undefined {
-    return regisrtyCache.get(ecosystem)
+    return regisrtyCache.get(ecosystem);
 }
 
 export function clearRegistryCache() : void {
-    regisrtyCache.clear()
+    regisrtyCache.clear();
 }

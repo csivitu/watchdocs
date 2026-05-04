@@ -5,7 +5,7 @@ export async function onlineGoResolver(
 ): Promise<DocResult | null> {
     const moduleName = dependency.name.trim();
 
-    if (!moduleName) return null;
+    if (!moduleName) {return null;}
 
     try {
         const controller = new AbortController();
@@ -18,7 +18,7 @@ export async function onlineGoResolver(
 
         clearTimeout(timeout);
 
-        if (!res.ok) return null;
+        if (!res.ok) {return null;}
 
         const docUrl = dependency.version
             ? `https://pkg.go.dev/${moduleName}@${dependency.version}`
