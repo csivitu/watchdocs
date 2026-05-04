@@ -6,11 +6,43 @@ import { onlinePipResolver } from "./online-pip-resolver";
 import { onlineGoResolver } from "./online-go-resolver";
 import { ExtensionContext } from "vscode";
 
+async function processWithConcurrency<T, R>(
+    items: T[], 
+    processor: (item: T) => Promise<R | null>, 
+    onBatchComplete: (results: R[]) => void, 
+    found: R[]
+): Promise<T[]> {
+    const queue = [...items];
+    const failed: T[] = [];
+    let completedCount = 0;
+
+    const worker = async () => {
+        while (queue.length > 0) {
+            const item = queue.shift();
+            if (!item) {break;}
+            const res = await processor(item);
+            if (res) {
+                found.push(res);
+                completedCount++;
+                if (completedCount % 4 === 0) {
+                    onBatchComplete(found);
+                }
+            } else {
+                failed.push(item);
+            }
+        }
+    };
+
+    await Promise.all(Array(16).fill(null).map(worker));
+    onBatchComplete(found);
+    return failed;
+}
+
 export async function resolver(deps: Dependency[], context: ExtensionContext, onProgress?: (results: DocResult[]) => void): Promise<DocResult[]>{
     const registryResults = await Promise.all(deps.map(regisrtyResolver));
     const found: DocResult[] = [];
     const missingDeps: Dependency[] = [];
-    const forGeminiDeps: Dependency[] = [];
+    
     deps.forEach((dep, i) => {
         const result = registryResults[i];
         if(result && result.docUrl){
@@ -20,48 +52,19 @@ export async function resolver(deps: Dependency[], context: ExtensionContext, on
         }
     });
     
-    if (onProgress) {
-      onProgress(found);
-    }
+    if (onProgress) {onProgress(found);}
+
+    const forGeminiDeps: Dependency[] = [];
+    
     const npmDeps = missingDeps.filter(d => d.ecosystem === "npm");
-    if(npmDeps.length>0){
-        const onlineResults = await Promise.all(npmDeps.map(onlineNpmResolver));
-        onlineResults.forEach((r, i)=>{
-            if(r?.docUrl){ 
-                found.push(r);
-            } else {
-                forGeminiDeps.push(npmDeps[i]);
-            } 
-        onProgress?.(found);
-        });
-        
-    }
-
     const pipDeps = missingDeps.filter(d => d.ecosystem === "pip");
-    if(pipDeps.length > 0){
-        const onlineResults = await Promise.all(pipDeps.map(onlinePipResolver));
-        onlineResults.forEach((r, i)=>{
-            if(r?.docUrl){
-                found.push(r);
-            } else {
-                forGeminiDeps.push(pipDeps[i]);
-            }
-        onProgress?.(found);
-        });
-    }
-
     const goDeps = missingDeps.filter(d => d.ecosystem === "go");
-    if(goDeps.length > 0){
-        const onlineResults = await Promise.all(goDeps.map(onlineGoResolver));
-        onlineResults.forEach((r, i)=>{
-            if(r?.docUrl){
-                found.push(r);
-            } else {
-                forGeminiDeps.push(goDeps[i]);
-            }
-        onProgress?.(found);
-        });
-    }
+
+    const failedNpm = await processWithConcurrency(npmDeps, onlineNpmResolver, (res) => onProgress?.([...res]), found);
+    const failedPip = await processWithConcurrency(pipDeps, onlinePipResolver, (res) => onProgress?.([...res]), found);
+    const failedGo = await processWithConcurrency(goDeps, onlineGoResolver, (res) => onProgress?.([...res]), found);
+
+    forGeminiDeps.push(...failedNpm, ...failedPip, ...failedGo);
     
     if(forGeminiDeps.length > 0){
         const geminiResolver = new GeminiResolver(context);
