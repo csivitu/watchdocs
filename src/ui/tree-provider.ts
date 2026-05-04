@@ -4,7 +4,7 @@ import { GeminiResolver } from "../core/resolver/gemini-resolver";
 import { resolver } from "../core/resolver/resolver";
 import { scanWorkspace } from "../core/scanner/scanner";
 import { readFile } from "../core/reader/reader";
-import { parsePackageJson, parseRequirementsTxt } from "../core/parsers";
+import { parsePackageJson, parseRequirementsTxt, parsePyProjectToml } from "../core/parsers";
 
 export class DocsTreeProvider implements vscode.TreeDataProvider<vscode.TreeItem> {
   private _onDidChangeTreeData = new vscode.EventEmitter<vscode.TreeItem | undefined>();
@@ -38,7 +38,11 @@ export class DocsTreeProvider implements vscode.TreeDataProvider<vscode.TreeItem
       if (manifest.type === "npm") {
         deps = parsePackageJson(content);
       } else if (manifest.type === "pip") {
-        deps = parseRequirementsTxt(content);
+        if(manifest.uri.fsPath.endsWith("pyproject.toml")){
+          deps = parsePyProjectToml(content);
+        } else if (manifest.uri.fsPath.endsWith("requirements.txt")){
+          deps = parseRequirementsTxt(content);
+        }
       }
 
       allDeps.push(...deps);
