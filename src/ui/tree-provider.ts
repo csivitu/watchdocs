@@ -4,7 +4,7 @@ import { GeminiResolver } from "../core/resolver/gemini-resolver";
 import { resolver } from "../core/resolver/resolver";
 import { scanWorkspace } from "../core/scanner/scanner";
 import { readFile } from "../core/reader/reader";
-import { parsePackageJson, parseRequirementsTxt, parsePyProjectToml } from "../core/parsers";
+import { parsePackageJson, parseRequirementsTxt, parsePyProjectToml, parseGoMod } from "../core/parsers";
 
 export class DocsTreeProvider implements vscode.TreeDataProvider<vscode.TreeItem> {
   private _onDidChangeTreeData = new vscode.EventEmitter<vscode.TreeItem | undefined>();
@@ -43,6 +43,8 @@ export class DocsTreeProvider implements vscode.TreeDataProvider<vscode.TreeItem
         } else if (manifest.uri.fsPath.endsWith("requirements.txt")){
           deps = parseRequirementsTxt(content);
         }
+      } else if (manifest.type === "go") {
+        deps = parseGoMod(content);
       }
 
       allDeps.push(...deps);

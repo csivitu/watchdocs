@@ -13,6 +13,11 @@
   "categories": [
     "Other"
   ],
+  "lint-staged": {
+    "*.{js,ts,jsx,tsx}": [
+      "eslint --fix"
+    ]
+  },
   "main": "./dist/extension.js",
   "contributes": {
     "commands": [

@@ -3,6 +3,7 @@ import { GeminiResolver } from "./gemini-resolver";
 import { regisrtyResolver } from "./registry-resolver";
 import { onlineNpmResolver } from "./online-npm-resolver";
 import { onlinePipResolver } from "./online-pip-resolver";
+import { onlineGoResolver } from "./online-go-resolver";
 import { ExtensionContext } from "vscode";
 
 export async function resolver(deps: Dependency[], context: ExtensionContext, onProgress?: (results: DocResult[]) => void): Promise<DocResult[]>{
@@ -44,6 +45,19 @@ export async function resolver(deps: Dependency[], context: ExtensionContext, on
                 found.push(r);
             } else {
                 forGeminiDeps.push(pipDeps[i]);
+            }
+        onProgress?.(found);
+        });
+    }
+
+    const goDeps = missingDeps.filter(d => d.ecosystem === "go");
+    if(goDeps.length > 0){
+        const onlineResults = await Promise.all(goDeps.map(onlineGoResolver));
+        onlineResults.forEach((r, i)=>{
+            if(r?.docUrl){
+                found.push(r);
+            } else {
+                forGeminiDeps.push(goDeps[i]);
             }
         onProgress?.(found);
         });
