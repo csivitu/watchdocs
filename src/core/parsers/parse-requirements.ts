@@ -13,7 +13,7 @@ export function parseRequirementsTxt(content: string): Dependency[] {
 
     let name = trimmed;
     let version = "unknown";
-
+    
     for (const op of operators) {
       if (trimmed.includes(op)) {
         const parts = trimmed.split(op);
