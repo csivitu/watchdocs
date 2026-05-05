@@ -30,13 +30,15 @@ WatchDocs is a VS Code extension that streamlines development by automatically s
 
 ## Features
 
-- **Auto Dependency Detection** - Scans workspace for `package.json` and `requirements.txt`
-- **Three-Tier Resolution Engine** - Local registry cache → Online NPM registry → AI fallback for maximum coverage
-- **Multi-Ecosystem Support** - npm, pip (current) & Go, Cargo, Maven, Pub (future)
+- **Auto Dependency Detection** - Scans workspace for manifest files (`package.json`, `requirements.txt`, `pyproject.toml`, `go.mod`)
+- **Three-Tier Resolution Engine** - Local registry cache → Online registries → AI fallback for maximum coverage
+- **High-Performance Worker Pool** - 16-concurrency worker pool for rapid dependency resolution
+- **Multi-Ecosystem Support** - npm, pip, go (current) & Cargo, Maven, Pub (future)
 - **Interactive Sidebar** - View all dependencies in one place with one-click doc access
+- **Fuzzy Search** - Filter sidebar items easily using fuzzysort
 - **Secure API Key Storage** - Gemini API key stored in VS Code's encrypted secrets storage
-- **Progressive UI Updates** - Results appear incrementally as they're resolved
-- **Smart Caching** - 260+ packages in local registry (offline), with online NPM fallback for real-time resolution
+- **Progressive UI Updates** - Results appear incrementally in batches of 4 as they're resolved
+- **Smart Caching** - 260+ packages in local registry (offline), with online fallback for real-time resolution
 
 ---
 
@@ -83,6 +85,7 @@ For packages not in the local registry, you can configure Gemini AI fallback:
 Workspace contains:
 - /my-project/package.json (with react, next, express)
 - /my-project/requirements.txt (with django, requests)
+- /my-project/go.mod (with gin, gorm)
 ```
 
 **Output:**
@@ -94,6 +97,8 @@ Sidebar displays:
 ├── express 4.18.0 → https://expressjs.com/
 ├── django 4.2.0 → https://docs.djangoproject.com/
 ├── requests 2.31.0 → https://requests.readthedocs.io/
+├── gin 1.9.1 → https://pkg.go.dev/github.com/gin-gonic/gin
+├── gorm 1.25.7 → https://gorm.io/
 └── Gemini API Key Exist ✓
 ```
 
@@ -155,7 +160,7 @@ No default keyboard shortcuts. You can add custom keybindings in `keybindings.js
 
 WatchDocs uses a **three-tier hybrid resolution strategy**:
 1. **Local Registry Cache** (fastest, offline-capable) - Checks pre-populated JSON registries (260+ packages)
-2. **Online NPM Registry** (fast, requires internet) - Fetches homepage URLs directly from npmjs.org for npm packages
+2. **Online Registries** (fast, requires internet) - Fetches homepage URLs directly from npmjs.org, PyPI, and pkg.go.dev in parallel using a 16-concurrency worker pool
 3. **Gemini AI Fallback** (comprehensive, requires API key) - Queries AI for packages not found in previous tiers
 
 This approach ensures fast resolution for popular packages while maintaining coverage for niche dependencies.
@@ -163,29 +168,28 @@ This approach ensures fast resolution for popular packages while maintaining cov
 ### Execution Flow
 
 1. **Trigger** - User clicks "Scan Dependencies" button in sidebar
-2. **File Discovery** - Scanner searches workspace for manifest files (`package.json`, `requirements.txt`)
+2. **File Discovery** - Scanner searches workspace for manifest files (`package.json`, `requirements.txt`, `pyproject.toml`, `go.mod`)
 3. **File Reading** - Reader loads each manifest file using VS Code's virtual file system, by getting utf-8 then converting to string
 4. **Parsing** - Ecosystem-specific parsers extract dependency names and versions from string of each file
 5. **Resolution** - Main resolver orchestrates three-tier lookup:
    - Tier 1: Local registry cache (instant)
-   - Tier 2: Online NPM registry fetch (npm packages only)
+   - Tier 2: Online registry fetch via 16-concurrency worker pool (npm, pip, go)
    - Tier 3: Gemini AI fallback (remaining packages)
-6. **Display** - Results rendered incrementally in sidebar tree view, with registry lookup at instant
+6. **Display** - Results rendered incrementally in batches of 4 in sidebar tree view, with registry lookup at instant
 
 ### Core Components
 
 | Component | Responsibility |
 |-----------|----------------|
-| `DocsTreeProvider` | Manages sidebar tree state and user interactions |
+| `DocsTreeProvider` | Manages sidebar tree state, fuzzy search, and user interactions |
 | `scanWorkspace()` | Finds all manifest files with include/exclude patterns |
 | `readFile()` | Reads file content from VS Code's virtual file system |
-| `parsePackageJson()` | Extracts npm dependencies from `package.json` |
-| `parseRequirementsTxt()` | Extracts pip dependencies from `requirements.txt` |
-| `resolver()` | Orchestrates three-tier resolution strategy with progress callbacks |
+| `parsers/` | Ecosystem-specific parsers for npm, pip, and go |
+| `resolver()` | Orchestrates three-tier resolution strategy with batch progress callbacks |
 | `registryResolver()` | Looks up docs from local JSON registries |
-| `onlineNpmResolver()` | Fetches documentation URLs from npm registry in real-time |
+| `online*Resolver()` | Fetches documentation URLs from online registries (npm, pip, go) in real-time |
 | `geminiResolver()` | Falls back to Gemini AI for unknown packages |
-| `cache` | In-memory caching for registry data |
+| `cache` | In-memory registry cache |
 
 ### Data Flow
 
@@ -194,18 +198,21 @@ User Action (Click Scan)
     ↓
 DocsTreeProvider.scan()
     ↓
-scanWorkspace() → [package.json, requirements.txt]
+scanWorkspace() → [package.json, requirements.txt, pyproject.toml, go.mod]
     ↓
 readFile() → file contents
     ↓
-parsePackageJson() / parseRequirementsTxt() → Dependency[]
+parsers → Dependency[]
     ↓
 resolver()
     ├─→ registryResolver() → DocResult[] (found)
-    ├─→ onlineNpmResolver() → DocResult[] (npm packages)
+    ├─→ Worker Pool (16 concurrency)
+    │     ├─→ onlineNpmResolver() → DocResult[] (npm packages)
+    │     ├─→ onlinePipResolver() → DocResult[] (pip packages)
+    │     └─→ onlineGoResolver() → DocResult[] (go packages)
     └─→ geminiResolver() → DocResult[] (remaining)
     ↓
-Sidebar Tree View (clickable links)
+Sidebar Tree View (updates in batches of 4)
 ```
 
 ### Walkthrough
@@ -222,11 +229,11 @@ Sidebar Tree View (clickable links)
    - Finds "react" → `https://react.dev/`
    - Finds "express" → `https://expressjs.com/`
    - Package "axios" not found in local cache
-7. **Tier 2 - Online NPM lookup:** (for missing npm packages)
+7. **Tier 2 - Online NPM lookup via Worker Pool:** (for missing npm packages)
    - Fetches `https://registry.npmjs.org/axios/latest`
    - Extracts `homepage` field from response
    - Returns `https://axios-http.com/`
-8. Progress callback updates UI with all found results
+8. Progress callback updates UI incrementally in batches of 4
 9. No missing packages, so Gemini AI not invoked
 10. Sidebar displays all dependencies with external link icons
 11. User clicks "react" → browser opens `https://react.dev/`
@@ -300,11 +307,10 @@ watchdocs/
 
 ## Known Issues
 
-- **Go Module Parsing Not Implemented** - `go.mod` files are detected but not parsed (registry infrastructure exists)
 - **Limited Pip Format Support** - Only handles `package==version` format; does not support `>=`, `<=`, `~=`, or extras
 - **No DevDependency Distinction** - npm `devDependencies` shown alongside `dependencies` without visual distinction
 - **Single Workspace Limitation** - Only scans first workspace folder in multi-root workspaces
-- **Online Resolver Limitations** - NPM online resolver only fetches `homepage` field; packages without homepage return null and proceed to AI fallback
+- **Online Resolver Limitations** - Online resolvers only fetch `homepage` fields; packages without homepage return null and proceed to AI fallback
 - **AI Response Parsing** - Gemini AI may occasionally return malformed JSON, causing fallback to "unknown"
 
 Report issues on the [GitHub repository](#).
@@ -313,23 +319,24 @@ Report issues on the [GitHub repository](#).
 
 ## Roadmap
 
-### v0.2.0 (In Development)
+### v0.2.1 (Current)
+- [x] High-Performance Worker Pool (16 concurrency)
+- [x] Incremental UI Updates (batches of 4)
+- [x] Implemented `go.mod` parser and online resolution
+- [x] Added Fuzzy Search for sidebar items
 - [x] Implemented online NPM resolver for real-time registry fetches
 - [x] Three-tier resolution strategy (local → online → AI)
-- [x] Improved coverage for npm packages not in local registry
-- [ ] Implement `go.mod` parser
+
+### v0.3.0 (Planned)
 - [ ] Add support for `Cargo.toml` (Rust)
 - [ ] Add support for `pom.xml` (Maven)
 - [ ] Add support for `pubspec.yaml` (Dart/Flutter)
 - [ ] Visual distinction between dependencies and devDependencies
 - [ ] Automatic rescanning on manifest file changes
-
-### v0.3.0 (Planned)
 - [ ] Version-specific documentation links
 - [ ] Offline mode toggle (disable AI calls)
 - [ ] Custom registry JSON support (user-provided)
 - [ ] Documentation preview panel (embedded docs)
-- [ ] Search/filter dependencies in sidebar
 
 ### Future Considerations
 - [ ] Multi-root workspace support
@@ -342,7 +349,14 @@ Report issues on the [GitHub repository](#).
 
 ## Release Notes
 
-### 0.2.0-alpha (In Development)
+### 0.2.1-alpha (2026-05-05)
+- **High-Performance Worker Pool**: Implemented a 16-concurrency worker pool for rapid dependency resolution.
+- **Incremental UI Updates**: Dependency results now appear in batches of 4 for better UI responsiveness.
+- **Go Support**: Added full support for `go.mod` files and online Go dependency resolution.
+- **Pip Support**: Added full support for `requirements.txt` & `pyproject.toml` files and online pip dependency resolution.
+- **Fuzzy Search**: Filter sidebar items using fuzzysort.
+
+### 0.2.0-alpha (2026-04-01)
 - Implemented online NPM resolver for real-time registry fetches
 - Three-tier resolution strategy (local → online → AI)
 - Improved coverage for npm packages not in local registry
