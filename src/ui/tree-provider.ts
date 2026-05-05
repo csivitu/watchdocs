@@ -4,7 +4,7 @@ import { GeminiResolver } from "../core/resolver/gemini-resolver";
 import { resolver } from "../core/resolver/resolver";
 import { scanWorkspace } from "../core/scanner/scanner";
 import { readFile } from "../core/reader/reader";
-import { parsePackageJson, parseRequirementsTxt } from "../core/parsers";
+import { parsePackageJson, parseRequirementsTxt, parsePyProjectToml, parseGoMod } from "../core/parsers";
 
 export class DocsTreeProvider implements vscode.TreeDataProvider<vscode.TreeItem> {
   private _onDidChangeTreeData = new vscode.EventEmitter<vscode.TreeItem | undefined>();
@@ -38,7 +38,13 @@ export class DocsTreeProvider implements vscode.TreeDataProvider<vscode.TreeItem
       if (manifest.type === "npm") {
         deps = parsePackageJson(content);
       } else if (manifest.type === "pip") {
-        deps = parseRequirementsTxt(content);
+        if(manifest.uri.fsPath.endsWith("pyproject.toml")){
+          deps = parsePyProjectToml(content);
+        } else if (manifest.uri.fsPath.endsWith("requirements.txt")){
+          deps = parseRequirementsTxt(content);
+        }
+      } else if (manifest.type === "go") {
+        deps = parseGoMod(content);
       }
 
       allDeps.push(...deps);
@@ -46,17 +52,17 @@ export class DocsTreeProvider implements vscode.TreeDataProvider<vscode.TreeItem
 
     this.scannedDeps = allDeps;
 
-    let statusMessage = vscode.window.setStatusBarMessage("Fetching docs via Gemini...")
+    let statusMessage = vscode.window.setStatusBarMessage("Fetching docs via Gemini...");
 
     this.resolvedResults = await resolver(allDeps, this.context, (partialResults) => {
-      this.resolvedResults = partialResults
-      this.refresh()
-    })
+      this.resolvedResults = partialResults;
+      this.refresh();
+    });
 
-    statusMessage.dispose()
+    statusMessage.dispose();
 
     if (allDeps.length > 0) {
-      vscode.window.showInformationMessage(`Found ${allDeps.length} dependencies`)
+      vscode.window.showInformationMessage(`Found ${allDeps.length} dependencies`);
     }
     
     this.refresh();

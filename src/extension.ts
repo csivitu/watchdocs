@@ -27,7 +27,7 @@ export function activate(context: vscode.ExtensionContext) {
     await context.secrets.delete("gemini-api-key");
     vscode.window.showInformationMessage("Gemini Api Key Removed");
     provider.refresh();
-  })  
+  });  
 
   context.subscriptions.push(scanCommand, helloCommand, setApiKeyCommand, refreshCommand, clearApiKeyCommand);
 }

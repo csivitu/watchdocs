@@ -18,6 +18,6 @@ export interface DocResolver {
 }
 
 export interface ManifestFile {
-  uri : Uri
-  type : "pip" | "npm" | "go" | "unknown"
+  uri: Uri
+  type: "pip" | "npm" | "go" | "cargo" | "maven" | "pub" | "gem" | "nuget" | "unknown"
 }

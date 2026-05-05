@@ -4,6 +4,26 @@ All notable changes to the WatchDocs extension will be documented in this file.
 
 This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.1-alpha] - 2026-05-05
+
+### Added
+- **High-Performance Worker Pool**: Implemented a 16-concurrency worker pool for rapid dependency resolution.
+- **Incremental UI Updates**: Dependency results now appear in batches of 4 for better UI responsiveness.
+- **Go Support**: Added full support for `go.mod` files and online Go dependency resolution.
+- **Pip Support**: Added full support for `requirements.txt` & `pyproject.toml` files and online pip dependency resolution.
+
+---
+
+## [0.2.0-alpha] - 2026-04-01
+
+### Added
+- **Online NPM Resolver**: Real-time registry fetch for npm packages not in local cache
+- **Three-Tier Resolution**: Local registry → Online NPM → Gemini AI fallback
+- **Improved Coverage**: Better documentation URL resolution for npm packages
+
+### Changed
+- Resolution flow now fetches from npmjs.org registry for missing packages before AI fallback
+
 ## [0.1.0-alpha] - 2026-03-29
 
 ### Added
