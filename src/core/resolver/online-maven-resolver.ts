@@ -1,54 +1,49 @@
-import {Dependency, DocResult} from "../../models"
+import { Dependency, DocResult } from "../../models"
 
-type MavenCoordinates={
-  groupId: string
-  artifactId: string
+type MavenSearchResponse = {
+  response?: {
+    docs?: Array<{
+      g: string
+      a: string
+      latestVersion?: string
+      homepage?: string
+    }>
+  }
 }
 
 export async function onlineMavenResolver(
   dependency: Dependency
-): Promise<DocResult|null>{
-  const coordinates= parseMavenCoordinates(dependency.name)
+): Promise<DocResult | null> {
+  const [groupId, artifactId] = dependency.name.split(":")
 
-  if (!coordinates){
+  if (!groupId || !artifactId) return null
+
+  try {
+    const query = `g:"${groupId}" AND a:"${artifactId}"`
+
+    const url =
+      `https://search.maven.org/solrsearch/select?q=${encodeURIComponent(query)}` +
+      `&rows=1&wt=json`
+
+    const res = await fetch(url)
+    if (!res.ok) return null
+
+    const data = (await res.json()) as MavenSearchResponse
+    const doc = data?.response?.docs?.[0]
+
+    if (!doc) return null
+
+    const docUrl =
+      doc.homepage ||
+      `https://search.maven.org/artifact/${doc.g}/${doc.a}`
+
+    return {
+      name: dependency.name,
+      version: dependency.version ?? doc.latestVersion ?? null,
+      docUrl,
+      source: "online-registry"
+    }
+  } catch {
     return null
   }
-
-  const docUrl= buildMavenCentralUrl(
-    coordinates,
-    dependency.version
-  )
-
-  return{
-    name: dependency.name,
-    version: dependency.version,
-    docUrl,
-    source: "online-registry"
-  }
-}
-
-function parseMavenCoordinates(
-  name: string
-): MavenCoordinates|null{
-  const [groupId, artifactId]= name
-    .split(":")
-    .map((part)=>part.trim())
-
-  if (!groupId||!artifactId){
-    return null
-  }
-
-  return{
-    groupId,
-    artifactId
-  }
-}
-
-function buildMavenCentralUrl(
-  coordinates: MavenCoordinates,
-  version: string | null
-): string {
-  const artifactUrl=`https://central.sonatype.com/artifact/`+`${encodeURIComponent(coordinates.groupId)}/`+`${encodeURIComponent(coordinates.artifactId)}`
-
-  return version? `${artifactUrl}/${encodeURIComponent(version)}`:artifactUrl
 }
