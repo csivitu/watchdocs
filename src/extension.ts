@@ -4,8 +4,13 @@ import { GeminiResolver } from "./core/resolver/gemini-resolver";
 
 export function activate(context: vscode.ExtensionContext) {
   const provider = new DocsTreeProvider(context);
+  
   vscode.window.registerTreeDataProvider("watchdocs.sidebar", provider);
 
+  const openDocsCommand = vscode.commands.registerCommand("watchdocs.openDoc", async (url: string) => {
+    await vscode.commands.executeCommand("simpleBrowser.show", url);
+  });
+  
   const scanCommand = vscode.commands.registerCommand("watchdocs.scan", async () => {
     await provider.scan();
   });
@@ -29,7 +34,7 @@ export function activate(context: vscode.ExtensionContext) {
     provider.refresh();
   });  
 
-  context.subscriptions.push(scanCommand, helloCommand, setApiKeyCommand, refreshCommand, clearApiKeyCommand);
+  context.subscriptions.push(scanCommand, helloCommand, setApiKeyCommand, refreshCommand, clearApiKeyCommand, openDocsCommand);
 }
 
 export function deactivate() { }
