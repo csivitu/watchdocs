@@ -78,22 +78,22 @@ export class DocsTreeProvider implements vscode.TreeDataProvider<vscode.TreeItem
   }
 
   async getChildren(element?: vscode.TreeItem): Promise<vscode.TreeItem[]> {
-    if (element) {
-      return Promise.resolve([]);
+    if (element && (element as any).children) {
+      return (element as any).children;
     }
 
-    const items: vscode.TreeItem[] = [];
-
-    items.push(new DependencyItem("Scan Dependencies", "Action", vscode.TreeItemCollapsibleState.None, {
+    const actionItems: vscode.TreeItem[] = [];
+    actionItems.push(new DependencyItem("Scan Dependencies", "Action", vscode.TreeItemCollapsibleState.None, {
       command: "watchdocs.scan",
       title: "Scan Dependencies"
     }, "play"));
 
+    const depItems: vscode.TreeItem[] = [];
     if (this.resolvedResults && this.resolvedResults.length > 0) {
       this.resolvedResults
         .filter(r => r.docUrl)
         .forEach(result => {
-          items.push(new DependencyItem(
+          depItems.push(new DependencyItem(
             result.name,
             result.version || "unknown",
             vscode.TreeItemCollapsibleState.None,
@@ -106,10 +106,21 @@ export class DocsTreeProvider implements vscode.TreeDataProvider<vscode.TreeItem
           ));
         });
     } else if (this.scannedDeps !== null && this.scannedDeps.length === 0) {
-      items.push(new vscode.TreeItem("No dependencies found", vscode.TreeItemCollapsibleState.None));
+      depItems.push(new vscode.TreeItem("No dependencies found", vscode.TreeItemCollapsibleState.None));
     }
 
-    return items;
+    return [
+      new SectionItem("Actions", actionItems, "zap"),
+      new SectionItem("Dependencies", depItems, "file-code")
+    ];
+  }
+}
+
+class SectionItem extends vscode.TreeItem {
+  constructor(label: string, children: vscode.TreeItem[], iconName: string) {
+    super(label, vscode.TreeItemCollapsibleState.Expanded);
+    (this as any).children = children;
+    this.iconPath = new vscode.ThemeIcon(iconName);
   }
 }
 
