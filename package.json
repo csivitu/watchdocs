@@ -47,7 +47,8 @@
       "watchdocs": [
         {
             "id": "watchdocs.sidebar",
-            "name": "Project Docs"
+            "name": "Project Docs",
+            "icon": "resources/watchdocs-v2.svg"
         }
       ]
     }
