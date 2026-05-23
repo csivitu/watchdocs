@@ -1,4 +1,4 @@
-import { Dependency, DocResult } from "../../models"
+import { Dependency, DocResult } from "../../models";
 
 type MavenSearchResponse = {
   response?: {
@@ -14,36 +14,36 @@ type MavenSearchResponse = {
 export async function onlineMavenResolver(
   dependency: Dependency
 ): Promise<DocResult | null> {
-  const [groupId, artifactId] = dependency.name.split(":")
+  const [groupId, artifactId] = dependency.name.split(":");
 
-  if (!groupId || !artifactId) return null
+  if (!groupId || !artifactId) {return null;}
 
   try {
-    const query = `g:"${groupId}" AND a:"${artifactId}"`
+    const query = `g:"${groupId}" AND a:"${artifactId}"`;
 
     const url =
       `https://search.maven.org/solrsearch/select?q=${encodeURIComponent(query)}` +
-      `&rows=1&wt=json`
+      `&rows=1&wt=json`;
 
-    const res = await fetch(url)
-    if (!res.ok) return null
+    const res = await fetch(url);
+    if (!res.ok) {return null;}
 
-    const data = (await res.json()) as MavenSearchResponse
-    const doc = data?.response?.docs?.[0]
+    const data = (await res.json()) as MavenSearchResponse;
+    const doc = data?.response?.docs?.[0];
 
-    if (!doc) return null
+    if (!doc) {return null;}
 
     const docUrl =
       doc.homepage ||
-      `https://search.maven.org/artifact/${doc.g}/${doc.a}`
+      `https://search.maven.org/artifact/${doc.g}/${doc.a}`;
 
     return {
       name: dependency.name,
       version: dependency.version ?? doc.latestVersion ?? null,
       docUrl,
       source: "online-registry"
-    }
+    };
   } catch {
-    return null
+    return null;
   }
 }
