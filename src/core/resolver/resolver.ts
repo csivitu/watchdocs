@@ -4,6 +4,7 @@ import { regisrtyResolver } from "./registry-resolver";
 import { onlineNpmResolver } from "./online-npm-resolver";
 import { onlinePipResolver } from "./online-pip-resolver";
 import { onlineGoResolver } from "./online-go-resolver";
+import { onlineCargoResolver } from "./online-cargo-resolver";
 import { ExtensionContext } from "vscode";
 
 async function processWithConcurrency<T, R>(
@@ -59,12 +60,14 @@ export async function resolver(deps: Dependency[], context: ExtensionContext, on
     const npmDeps = missingDeps.filter(d => d.ecosystem === "npm");
     const pipDeps = missingDeps.filter(d => d.ecosystem === "pip");
     const goDeps = missingDeps.filter(d => d.ecosystem === "go");
+    const cargoDeps = missingDeps.filter(d => d.ecosystem === "cargo");
 
     const failedNpm = await processWithConcurrency(npmDeps, onlineNpmResolver, (res) => onProgress?.([...res]), found);
     const failedPip = await processWithConcurrency(pipDeps, onlinePipResolver, (res) => onProgress?.([...res]), found);
     const failedGo = await processWithConcurrency(goDeps, onlineGoResolver, (res) => onProgress?.([...res]), found);
+    const failedCargo = await processWithConcurrency(cargoDeps, onlineCargoResolver, (res) => onProgress?.([...res]), found);
 
-    forGeminiDeps.push(...failedNpm, ...failedPip, ...failedGo);
+    forGeminiDeps.push(...failedNpm, ...failedPip, ...failedGo, ...failedCargo);
     
     if(forGeminiDeps.length > 0){
         const geminiResolver = new GeminiResolver(context);
