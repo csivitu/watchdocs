@@ -92,10 +92,9 @@ export class DocsTreeProvider implements vscode.TreeDataProvider<vscode.TreeItem
           result.version || "unknown",
           vscode.TreeItemCollapsibleState.None,
           result.docUrl ? {
-            command: "vscode.open",
+            command: "watchdocs.openDoc",
             title: "Open Docs",
-            arguments: [vscode.Uri.parse(result.docUrl)]
-          } : undefined,
+            arguments: [result.docUrl, result.name, result.version || "unknown"]          } : undefined,
           result.docUrl ? "link-external" : "question"
         ));
       });
