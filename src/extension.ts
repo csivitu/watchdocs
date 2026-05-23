@@ -7,7 +7,11 @@ export function activate(context: vscode.ExtensionContext) {
   vscode.window.registerTreeDataProvider("watchdocs.sidebar", provider);
 
   const openDocsCommand = vscode.commands.registerCommand("watchdocs.openDoc", async (url: string) => {
-    await vscode.commands.executeCommand("simpleBrowser.show", url);
+    try {
+      await vscode.commands.executeCommand("simpleBrowser.show", url);
+    } catch {
+      await vscode.env.openExternal(vscode.Uri.parse(url));
+    }
   });
   
   const scanCommand = vscode.commands.registerCommand("watchdocs.scan", async () => {
