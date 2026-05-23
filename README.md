@@ -6,7 +6,7 @@
 
 ## Overview
 
-WatchDocs is a VS Code extension that streamlines development by automatically scanning your workspace for dependency manifest files (`package.json`, `requirements.txt`, etc.), extracting the listed packages, and providing instant clickable links to their official documentation.
+WatchDocs is a VS Code extension that streamlines development by automatically scanning your workspace for dependency manifest files (`package.json`, `Cargo.toml`, `go.mod`, `requirements.txt`, `pyproject.toml`, `pom.xml`, `pubspec.yaml`), extracting the listed packages, and providing instant clickable links to their official documentation.
 
 **Who it's for:**
 - Developers working with multiple dependencies across different ecosystems
@@ -30,15 +30,13 @@ WatchDocs is a VS Code extension that streamlines development by automatically s
 
 ## Features
 
-- **Auto Dependency Detection** - Scans workspace for manifest files (`package.json`, `requirements.txt`, `pyproject.toml`, `go.mod`)
-- **Three-Tier Resolution Engine** - Local registry cache → Online registries → AI fallback for maximum coverage
+- **Auto Dependency Detection** - Scans workspace for manifest files (`package.json`, `requirements.txt`, `pyproject.toml`, `go.mod`, `Cargo.toml`, `pom.xml`, `pubspec.yaml`)
+- **Two-Tier Resolution Engine** - Local registry cache → Online registries for maximum coverage
 - **High-Performance Worker Pool** - 16-concurrency worker pool for rapid dependency resolution
-- **Multi-Ecosystem Support** - npm, pip, go (current) & Cargo, Maven, Pub (future)
+- **Multi-Ecosystem Support** - npm, pip, go, cargo, maven, pub
 - **Interactive Sidebar** - View all dependencies in one place with one-click doc access
-- **Fuzzy Search** - Filter sidebar items easily using fuzzysort
-- **Secure API Key Storage** - Gemini API key stored in VS Code's encrypted secrets storage
 - **Progressive UI Updates** - Results appear incrementally in batches of 4 as they're resolved
-- **Smart Caching** - 260+ packages in local registry (offline), with online fallback for real-time resolution
+- **Smart Caching** - 277+ packages in local registry (offline), with online fallback for real-time resolution
 
 ---
 
@@ -70,14 +68,6 @@ code --install-extension watchdocs.watchdocs
 4. **Wait for resolution** - dependencies will appear as they're found
 5. **Click any dependency** to open its official documentation in your browser
 
-### Setting Up API Key (Optional)
-
-For packages not in the local registry, you can configure Gemini AI fallback:
-
-1. Click the **key icon** in the sidebar ("Add Gemini API Key")
-2. Enter your [Google Gemini API key](https://aistudio.google.com/app/apikey)
-3. Press `Enter` to save securely
-
 ### Example
 
 **Input:**
@@ -99,7 +89,7 @@ Sidebar displays:
 ├── requests 2.31.0 → https://requests.readthedocs.io/
 ├── gin 1.9.1 → https://pkg.go.dev/github.com/gin-gonic/gin
 ├── gorm 1.25.7 → https://gorm.io/
-└── Gemini API Key Exist ✓
+└── tokio 1.35.0 → https://docs.rs/tokio
 ```
 
 ---
@@ -109,32 +99,10 @@ Sidebar displays:
 | Command | Description |
 |---------|-------------|
 | `watchdocs.scan` | Scan workspace for dependencies and resolve documentation URLs |
-| `watchdocs.setApiKey` | Prompt to enter and securely store Gemini API key |
-| `watchdocs.clearApiKey` | Remove stored Gemini API key |
 | `watchdocs.refreshTreeView` | Refresh the dependency tree view |
 | `watchdocs.helloWorld` | Show "Hello from WatchDocs!" message (debug) |
 
 Access commands via Command Palette (`Ctrl+Shift+P` / `Cmd+Shift+P`)
-
----
-
-## Configuration
-
-WatchDocs does not currently expose user-configurable settings. All configuration is managed through commands.
-
-### API Key Management
-
-API key is stored in VS Code's secure secrets storage (encrypted):
-
-| Setting | Description | Default |
-|---------|-------------|---------|
-| `gemini-api-key` | Google Gemini API key for AI-based doc resolution | Not set (optional) |
-
-**Example: Setting via Command**
-```json
-// Run: watchdocs.setApiKey
-// Enter your key in the input box
-```
 
 ---
 
@@ -158,37 +126,34 @@ No default keyboard shortcuts. You can add custom keybindings in `keybindings.js
 
 ### Overview
 
-WatchDocs uses a **three-tier hybrid resolution strategy**:
-1. **Local Registry Cache** (fastest, offline-capable) - Checks pre-populated JSON registries (260+ packages)
-2. **Online Registries** (fast, requires internet) - Fetches homepage URLs directly from npmjs.org, PyPI, and pkg.go.dev in parallel using a 16-concurrency worker pool
-3. **Gemini AI Fallback** (comprehensive, requires API key) - Queries AI for packages not found in previous tiers
+WatchDocs uses a **two-tier hybrid resolution strategy**:
+1. **Local Registry Cache** (fastest, offline-capable) - Checks pre-populated JSON registries (277+ packages across 6 ecosystems)
+2. **Online Registries** (fast, requires internet) - Fetches homepage URLs directly from npmjs.org, PyPI, pkg.go.dev, crates.io, Maven Central, and pub.dev in parallel using a 16-concurrency worker pool
 
-This approach ensures fast resolution for popular packages while maintaining coverage for niche dependencies.
+This approach ensures fast resolution for popular packages while maintaining coverage for niche dependencies. Packages not found in either tier are not displayed.
 
 ### Execution Flow
 
 1. **Trigger** - User clicks "Scan Dependencies" button in sidebar
-2. **File Discovery** - Scanner searches workspace for manifest files (`package.json`, `requirements.txt`, `pyproject.toml`, `go.mod`)
+2. **File Discovery** - Scanner searches workspace for manifest files (`package.json`, `requirements.txt`, `pyproject.toml`, `go.mod`, `Cargo.toml`, `pom.xml`, `pubspec.yaml`)
 3. **File Reading** - Reader loads each manifest file using VS Code's virtual file system, by getting utf-8 then converting to string
 4. **Parsing** - Ecosystem-specific parsers extract dependency names and versions from string of each file
-5. **Resolution** - Main resolver orchestrates three-tier lookup:
+5. **Resolution** - Main resolver orchestrates two-tier lookup:
    - Tier 1: Local registry cache (instant)
-   - Tier 2: Online registry fetch via 16-concurrency worker pool (npm, pip, go)
-   - Tier 3: Gemini AI fallback (remaining packages)
+   - Tier 2: Online registry fetch via 16-concurrency worker pool (npm, pip, go, cargo, maven, pub)
 6. **Display** - Results rendered incrementally in batches of 4 in sidebar tree view, with registry lookup at instant
 
 ### Core Components
 
 | Component | Responsibility |
 |-----------|----------------|
-| `DocsTreeProvider` | Manages sidebar tree state, fuzzy search, and user interactions |
+| `DocsTreeProvider` | Manages sidebar tree state and user interactions |
 | `scanWorkspace()` | Finds all manifest files with include/exclude patterns |
 | `readFile()` | Reads file content from VS Code's virtual file system |
-| `parsers/` | Ecosystem-specific parsers for npm, pip, and go |
-| `resolver()` | Orchestrates three-tier resolution strategy with batch progress callbacks |
+| `parsers/` | Ecosystem-specific parsers for npm, pip, go, cargo, maven, and pub |
+| `resolver()` | Orchestrates two-tier resolution strategy with batch progress callbacks |
 | `registryResolver()` | Looks up docs from local JSON registries |
-| `online*Resolver()` | Fetches documentation URLs from online registries (npm, pip, go) in real-time |
-| `geminiResolver()` | Falls back to Gemini AI for unknown packages |
+| `online*Resolver()` | Fetches documentation URLs from online registries (npm, pip, go, cargo, maven, pub) in real-time |
 | `cache` | In-memory registry cache |
 
 ### Data Flow
@@ -198,7 +163,7 @@ User Action (Click Scan)
     ↓
 DocsTreeProvider.scan()
     ↓
-scanWorkspace() → [package.json, requirements.txt, pyproject.toml, go.mod]
+scanWorkspace() → [package.json, Cargo.toml, go.mod, ...]
     ↓
 readFile() → file contents
     ↓
@@ -206,11 +171,13 @@ parsers → Dependency[]
     ↓
 resolver()
     ├─→ registryResolver() → DocResult[] (found)
-    ├─→ Worker Pool (16 concurrency)
-    │     ├─→ onlineNpmResolver() → DocResult[] (npm packages)
-    │     ├─→ onlinePipResolver() → DocResult[] (pip packages)
-    │     └─→ onlineGoResolver() → DocResult[] (go packages)
-    └─→ geminiResolver() → DocResult[] (remaining)
+    └─→ Worker Pool (16 concurrency)
+          ├─→ onlineNpmResolver() → DocResult[] (npm packages)
+          ├─→ onlinePipResolver() → DocResult[] (pip packages)
+          ├─→ onlineGoResolver() → DocResult[] (go packages)
+          ├─→ onlineCargoResolver() → DocResult[] (cargo packages)
+          ├─→ onlineMavenResolver() → DocResult[] (maven packages)
+          └─→ onlinePubResolver() → DocResult[] (pub packages)
     ↓
 Sidebar Tree View (updates in batches of 4)
 ```
@@ -234,9 +201,8 @@ Sidebar Tree View (updates in batches of 4)
    - Extracts `homepage` field from response
    - Returns `https://axios-http.com/`
 8. Progress callback updates UI incrementally in batches of 4
-9. No missing packages, so Gemini AI not invoked
-10. Sidebar displays all dependencies with external link icons
-11. User clicks "react" → browser opens `https://react.dev/`
+9. Sidebar displays all resolved dependencies with external link icons
+10. User clicks "react" → browser opens `https://react.dev/`
 
 ---
 
@@ -249,7 +215,6 @@ watchdocs/
 ├── src/
 │   ├── extension.ts           # Entry point, command registration
 │   ├── models.ts              # TypeScript interfaces and types
-│   ├── test-resolver.ts       # Standalone resolver test (Node.js)
 │   ├── ui/
 │   │   └── tree-provider.ts   # Sidebar TreeDataProvider implementation
 │   ├── core/
@@ -260,17 +225,27 @@ watchdocs/
 │   │   ├── parsers/
 │   │   │   ├── index.ts       # Parser exports
 │   │   │   ├── parse-package-json.ts      # npm parser
-│   │   │   └── parse-requirements.ts      # pip parser
+│   │   │   ├── parse-requirements.ts      # pip parser
+│   │   │   ├── parse-pyproject-toml.ts    # pip parser (pyproject.toml)
+│   │   │   ├── parse-go-mod.ts            # go parser
+│   │   │   ├── parse-cargo-toml.ts        # cargo parser
+│   │   │   ├── parse-pom-xml.ts           # maven parser
+│   │   │   └── parse-pubspec-yaml.ts      # pub parser
 │   │   ├── resolver/
-│   │   │   ├── resolver.ts    # Main orchestrator
+│   │   │   ├── resolver.ts    # Main orchestrator (two-tier)
 │   │   │   ├── registry-resolver.ts       # Local registry lookup
-│   │   │   └── gemini-resolver.ts         # AI fallback resolver
+│   │   │   ├── online-npm-resolver.ts     # NPM online resolver
+│   │   │   ├── online-pip-resolver.ts     # PyPI online resolver
+│   │   │   ├── online-go-resolver.ts      # Go online resolver
+│   │   │   ├── online-cargo-resolver.ts   # crates.io online resolver
+│   │   │   ├── online-maven-resolver.ts   # Maven online resolver
+│   │   │   └── online-pub-resolver.ts     # pub.dev online resolver
 │   │   └── cache/
 │   │       └── cache.ts       # In-memory registry cache
 │   └── test/
 │       ├── extension.test.ts  # Extension test suite
 │       ├── parser.test.ts     # Parser unit tests
-│       └── run-parser.ts      # Manual parser test script
+│       └── pip-resolver.test.ts # Pip resolver unit tests
 ├── resources/
 │   ├── watchdocs-v2.svg       # Extension icon
 │   └── registries/
@@ -297,10 +272,9 @@ watchdocs/
 | `scanner.ts` | File discovery with glob patterns and exclusions |
 | `reader.ts` | UTF-8 file reading via VS Code FS API |
 | `parsers/` | Ecosystem-specific dependency extraction |
-| `resolver.ts` | Three-tier resolution orchestration with progress callbacks |
+| `resolver.ts` | Two-tier resolution orchestration with progress callbacks |
 | `registry-resolver.ts` | Fast local JSON registry lookup with caching |
-| `online-npm-resolver.ts` | Real-time npm registry fetcher for homepage URLs |
-| `gemini-resolver.ts` | AI-based resolution using Google Gemini API |
+| `online-*-resolver.ts` | Real-time registry fetchers for npm, pip, go, cargo, maven, pub |
 | `cache.ts` | Session-based in-memory registry caching |
 
 ---
@@ -310,8 +284,6 @@ watchdocs/
 - **Limited Pip Format Support** - Only handles `package==version` format; does not support `>=`, `<=`, `~=`, or extras
 - **No DevDependency Distinction** - npm `devDependencies` shown alongside `dependencies` without visual distinction
 - **Single Workspace Limitation** - Only scans first workspace folder in multi-root workspaces
-- **Online Resolver Limitations** - Online resolvers only fetch `homepage` fields; packages without homepage return null and proceed to AI fallback
-- **AI Response Parsing** - Gemini AI may occasionally return malformed JSON, causing fallback to "unknown"
 
 Report issues on the [GitHub repository](#).
 
@@ -323,14 +295,11 @@ Report issues on the [GitHub repository](#).
 - [x] High-Performance Worker Pool (16 concurrency)
 - [x] Incremental UI Updates (batches of 4)
 - [x] Implemented `go.mod` parser and online resolution
-- [x] Added Fuzzy Search for sidebar items
 - [x] Implemented online NPM resolver for real-time registry fetches
-- [x] Three-tier resolution strategy (local → online → AI)
+- [x] Two-tier resolution strategy (local → online)
 
 ### v0.3.0 (Planned)
-- [ ] Add support for `Cargo.toml` (Rust)
-- [ ] Add support for `pom.xml` (Maven)
-- [ ] Add support for `pubspec.yaml` (Dart/Flutter)
+- [ ] Visual distinction between dependencies and devDependencies
 - [ ] Visual distinction between dependencies and devDependencies
 - [ ] Automatic rescanning on manifest file changes
 - [ ] Version-specific documentation links
@@ -408,16 +377,6 @@ npm run package
 2. A new VS Code window opens with the extension loaded
 3. Set breakpoints in `src/` files for debugging
 
-### Test Standalone Resolver
-
-```bash
-# Set environment variable
-export GEMINI_API_KEY="your-api-key"
-
-# Run standalone test (outside VS Code)
-npx ts-node src/test-resolver.ts
-```
-
 ---
 
 ## Testing
@@ -434,7 +393,7 @@ npm test
 Tests located in `src/test/`:
 - `extension.test.ts` - Extension activation and command tests
 - `parser.test.ts` - Parser unit tests (npm, pip)
-- `run-parser.ts` - Manual parser test script
+- `pip-resolver.test.ts` - Online pip resolver tests
 
 ### Write New Tests
 
@@ -478,7 +437,6 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## Acknowledgements
 
-- **[Google Gemini AI](https://ai.google.dev/)** - Powers the AI fallback resolver for unknown packages
 - **[Keep a Changelog](https://keepachangelog.com/)** - Changelog format inspiration
 - **[VS Code Extension API](https://code.visualstudio.com/api)** - Extension framework and documentation
 - **Package Maintainers** - All the open-source projects whose documentation is linked
@@ -489,7 +447,6 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 - **Documentation:** This README
 - **Issues:** [GitHub Issues](#)
-- **API Key:** Get your free Gemini API key at [Google AI Studio](https://aistudio.google.com/app/apikey)
 
 ---
 
