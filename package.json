@@ -28,10 +28,6 @@
       {
         "command": "watchdocs.scan",
         "title": "Scan Dependencies"
-      },
-      {
-        "command": "watchdocs.setApiKey",
-        "title": "Set Gemini Api Key"
       }
     ],
     "viewsContainers": {
@@ -82,7 +78,6 @@
     "typescript-eslint": "^8.56.1"
   },
   "dependencies": {
-    "@google/genai": "^1.46.0",
     "dotenv": "^17.3.1",
     "fuzzysort": "^3.1.0"
   }

@@ -1,6 +1,5 @@
 import * as vscode from "vscode";
 import { Dependency, DocResult } from "../models";
-import { GeminiResolver } from "../core/resolver/gemini-resolver";
 import { resolver } from "../core/resolver/resolver";
 import { scanWorkspace } from "../core/scanner/scanner";
 import { readFile } from "../core/reader/reader";
@@ -13,7 +12,7 @@ export class DocsTreeProvider implements vscode.TreeDataProvider<vscode.TreeItem
   private scannedDeps: Dependency[] | null = null;
   private resolvedResults: DocResult[] | null = null;
 
-  constructor(private context: vscode.ExtensionContext) {}
+  constructor() {}
 
   refresh(): void {
     this._onDidChangeTreeData.fire(undefined);
@@ -60,7 +59,7 @@ export class DocsTreeProvider implements vscode.TreeDataProvider<vscode.TreeItem
 
     let statusMessage = vscode.window.setStatusBarMessage("Fetching Documentation...");
 
-    this.resolvedResults = await resolver(allDeps, this.context, (partialResults) => {
+    this.resolvedResults = await resolver(allDeps, (partialResults) => {
       this.resolvedResults = partialResults;
       this.refresh();
     });
@@ -83,7 +82,6 @@ export class DocsTreeProvider implements vscode.TreeDataProvider<vscode.TreeItem
       return Promise.resolve([]);
     }
 
-    const hasApiKey = await GeminiResolver.hasApiKey(this.context);
     const items: vscode.TreeItem[] = [];
 
     items.push(new DependencyItem("Scan Dependencies", "Action", vscode.TreeItemCollapsibleState.None, {
@@ -92,43 +90,26 @@ export class DocsTreeProvider implements vscode.TreeDataProvider<vscode.TreeItem
     }, "play"));
 
     if (this.resolvedResults && this.resolvedResults.length > 0) {
-      this.resolvedResults.forEach(result => {
-        items.push(new DependencyItem(
-          result.name,
-          result.version || "unknown",
-          vscode.TreeItemCollapsibleState.None,
-          result.docUrl ? {
-            command: "watchdocs.openDoc",
-            title: "Open Docs",
-            arguments: [result.docUrl, result.name, result.version || "unknown"]          } : undefined,
-          result.docUrl ? "link-external" : "question"
-        ));
-      });
+      this.resolvedResults
+        .filter(r => r.docUrl)
+        .forEach(result => {
+          items.push(new DependencyItem(
+            result.name,
+            result.version || "unknown",
+            vscode.TreeItemCollapsibleState.None,
+            {
+              command: "watchdocs.openDoc",
+              title: "Open Docs",
+              arguments: [result.docUrl, result.name, result.version || "unknown"]
+            },
+            "link-external"
+          ));
+        });
     } else if (this.scannedDeps !== null && this.scannedDeps.length === 0) {
       items.push(new vscode.TreeItem("No dependencies found", vscode.TreeItemCollapsibleState.None));
     }
 
-    items.push(new ApiKeyItem(hasApiKey, this.context));
-
     return items;
-  }
-}
-
-class ApiKeyItem extends vscode.TreeItem {
-  constructor(
-    hasApiKey: boolean,
-    private context: vscode.ExtensionContext
-  ) {
-    super(
-      hasApiKey ? "Gemini API Key Exist" : "Add Gemini API Key",
-      vscode.TreeItemCollapsibleState.None
-    );
-    this.command = {
-      command: "watchdocs.setApiKey",
-      title: "Set Gemini API Key"
-    };
-    this.iconPath = new vscode.ThemeIcon(hasApiKey ? "check" : "key");
-    this.tooltip = hasApiKey ? "Gemini API Key is set" : "Click to add your Gemini API Key";
   }
 }
 

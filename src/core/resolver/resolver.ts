@@ -1,5 +1,4 @@
 import { Dependency, DocResult } from "../../models";
-import { GeminiResolver } from "./gemini-resolver";
 import { regisrtyResolver } from "./registry-resolver";
 import { onlineNpmResolver } from "./online-npm-resolver";
 import { onlinePipResolver } from "./online-pip-resolver";
@@ -7,7 +6,6 @@ import { onlineGoResolver } from "./online-go-resolver";
 import { onlineCargoResolver } from "./online-cargo-resolver";
 import { onlineMavenResolver } from "./online-maven-resolver";
 import { onlinePubResolver } from "./online-pub-resolver";
-import { ExtensionContext } from "vscode";
 
 async function processWithConcurrency<T, R>(
     items: T[], 
@@ -41,7 +39,7 @@ async function processWithConcurrency<T, R>(
     return failed;
 }
 
-export async function resolver(deps: Dependency[], context: ExtensionContext, onProgress?: (results: DocResult[]) => void): Promise<DocResult[]>{
+export async function resolver(deps: Dependency[], onProgress?: (results: DocResult[]) => void): Promise<DocResult[]>{
     const registryResults = await Promise.all(deps.map(regisrtyResolver));
     const found: DocResult[] = [];
     const missingDeps: Dependency[] = [];
@@ -57,36 +55,18 @@ export async function resolver(deps: Dependency[], context: ExtensionContext, on
     
     if (onProgress) {onProgress(found);}
 
-    const forGeminiDeps: Dependency[] = [];
-    
     const npmDeps = missingDeps.filter(d => d.ecosystem === "npm");
     const pipDeps = missingDeps.filter(d => d.ecosystem === "pip");
     const goDeps = missingDeps.filter(d => d.ecosystem === "go");
     const cargoDeps = missingDeps.filter(d => d.ecosystem === "cargo");
     const mavenDeps = missingDeps.filter(d => d.ecosystem === "maven");
     const pubDeps = missingDeps.filter(d => d.ecosystem === "pub");
-    const failedNpm = await processWithConcurrency(npmDeps, onlineNpmResolver, (res) => onProgress?.([...res]), found);
-    const failedPip = await processWithConcurrency(pipDeps, onlinePipResolver, (res) => onProgress?.([...res]), found);
-    const failedGo = await processWithConcurrency(goDeps, onlineGoResolver, (res) => onProgress?.([...res]), found);
-    const failedCargo = await processWithConcurrency(cargoDeps, onlineCargoResolver, (res) => onProgress?.([...res]), found);
-    const failedMaven = await processWithConcurrency(mavenDeps, onlineMavenResolver, (res) => onProgress?.([...res]), found);
-    const failedPub = await processWithConcurrency(pubDeps, onlinePubResolver, (res) => onProgress?.([...res]), found);
+    await processWithConcurrency(npmDeps, onlineNpmResolver, (res) => onProgress?.([...res]), found);
+    await processWithConcurrency(pipDeps, onlinePipResolver, (res) => onProgress?.([...res]), found);
+    await processWithConcurrency(goDeps, onlineGoResolver, (res) => onProgress?.([...res]), found);
+    await processWithConcurrency(cargoDeps, onlineCargoResolver, (res) => onProgress?.([...res]), found);
+    await processWithConcurrency(mavenDeps, onlineMavenResolver, (res) => onProgress?.([...res]), found);
+    await processWithConcurrency(pubDeps, onlinePubResolver, (res) => onProgress?.([...res]), found);
 
-    forGeminiDeps.push(...failedNpm, ...failedPip, ...failedGo, ...failedCargo, ...failedMaven, ...failedPub);
-    
-    if(forGeminiDeps.length > 0){
-        const geminiResolver = new GeminiResolver(context);
-        try {
-            const geminiResults = await geminiResolver.resolve(forGeminiDeps);
-            return [...found, ...geminiResults];
-        } catch {
-            return [...found, ...forGeminiDeps.map(d => ({
-                name: d.name,
-                version: d.version,
-                docUrl: null,
-                source: "unknown" as const
-            }))];
-        }
-    }
     return found;
 }
