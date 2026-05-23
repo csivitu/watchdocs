@@ -3,11 +3,9 @@ import { GeminiResolver } from "./gemini-resolver";
 import { regisrtyResolver } from "./registry-resolver";
 import { onlineNpmResolver } from "./online-npm-resolver";
 import { onlinePipResolver } from "./online-pip-resolver";
-<<<<<<< HEAD
 import { onlineGoResolver } from "./online-go-resolver";
-=======
-import { onlineMavenResolver } from "./online-maven-resolver"
->>>>>>> 7062825 (add maven resolver and update resolver pipeline)
+import { onlineCargoResolver } from "./online-cargo-resolver";
+import { onlineMavenResolver } from "./online-maven-resolver";
 import { ExtensionContext } from "vscode";
 
 async function processWithConcurrency<T, R>(
@@ -58,45 +56,20 @@ export async function resolver(deps: Dependency[], context: ExtensionContext, on
     
     if (onProgress) {onProgress(found);}
 
-<<<<<<< HEAD
     const forGeminiDeps: Dependency[] = [];
     
     const npmDeps = missingDeps.filter(d => d.ecosystem === "npm");
     const pipDeps = missingDeps.filter(d => d.ecosystem === "pip");
     const goDeps = missingDeps.filter(d => d.ecosystem === "go");
-
+    const cargoDeps = missingDeps.filter(d => d.ecosystem === "cargo");
+    const mavenDeps = missingDeps.filter(d => d.ecosystem === "maven");
     const failedNpm = await processWithConcurrency(npmDeps, onlineNpmResolver, (res) => onProgress?.([...res]), found);
     const failedPip = await processWithConcurrency(pipDeps, onlinePipResolver, (res) => onProgress?.([...res]), found);
     const failedGo = await processWithConcurrency(goDeps, onlineGoResolver, (res) => onProgress?.([...res]), found);
+    const failedCargo = await processWithConcurrency(cargoDeps, onlineCargoResolver, (res) => onProgress?.([...res]), found);
+    const failedMaven = await processWithConcurrency(mavenDeps, onlineMavenResolver, (res) => onProgress?.([...res]), found);
 
-    forGeminiDeps.push(...failedNpm, ...failedPip, ...failedGo);
-=======
-    const pipDeps = missingDeps.filter(d => d.ecosystem === "pip")
-    if(pipDeps.length > 0){
-        const onlineResults = await Promise.all(pipDeps.map(onlinePipResolver))
-        onlineResults.forEach((r, i)=>{
-            if(r?.docUrl){
-                found.push(r)
-            } else {
-                forGeminiDeps.push(pipDeps[i])
-            }
-        onProgress?.(found);
-        })
-    }
-
-    const mavenDeps = missingDeps.filter(d => d.ecosystem === "maven")
-    if (mavenDeps.length > 0) {
-        const onlineResults = await Promise.all(mavenDeps.map(onlineMavenResolver))
-        onlineResults.forEach((r, i) => {
-            if (r?.docUrl) {
-                found.push(r)
-            } else {
-                forGeminiDeps.push(mavenDeps[i])
-            }
-        })
-        onProgress?.(found)
-    }
->>>>>>> 7062825 (add maven resolver and update resolver pipeline)
+    forGeminiDeps.push(...failedNpm, ...failedPip, ...failedGo, ...failedCargo, ...failedMaven);
     
     if(forGeminiDeps.length > 0){
         const geminiResolver = new GeminiResolver(context);
