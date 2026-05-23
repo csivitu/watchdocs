@@ -5,6 +5,7 @@ import { onlineNpmResolver } from "./online-npm-resolver";
 import { onlinePipResolver } from "./online-pip-resolver";
 import { onlineGoResolver } from "./online-go-resolver";
 import { onlineCargoResolver } from "./online-cargo-resolver";
+import { onlineMavenResolver } from "./online-maven-resolver";
 import { ExtensionContext } from "vscode";
 
 async function processWithConcurrency<T, R>(
@@ -61,13 +62,14 @@ export async function resolver(deps: Dependency[], context: ExtensionContext, on
     const pipDeps = missingDeps.filter(d => d.ecosystem === "pip");
     const goDeps = missingDeps.filter(d => d.ecosystem === "go");
     const cargoDeps = missingDeps.filter(d => d.ecosystem === "cargo");
-
+    const mavenDeps = missingDeps.filter(d => d.ecosystem === "maven");
     const failedNpm = await processWithConcurrency(npmDeps, onlineNpmResolver, (res) => onProgress?.([...res]), found);
     const failedPip = await processWithConcurrency(pipDeps, onlinePipResolver, (res) => onProgress?.([...res]), found);
     const failedGo = await processWithConcurrency(goDeps, onlineGoResolver, (res) => onProgress?.([...res]), found);
     const failedCargo = await processWithConcurrency(cargoDeps, onlineCargoResolver, (res) => onProgress?.([...res]), found);
+    const failedMaven = await processWithConcurrency(mavenDeps, onlineMavenResolver, (res) => onProgress?.([...res]), found);
 
-    forGeminiDeps.push(...failedNpm, ...failedPip, ...failedGo, ...failedCargo);
+    forGeminiDeps.push(...failedNpm, ...failedPip, ...failedGo, ...failedCargo, ...failedMaven);
     
     if(forGeminiDeps.length > 0){
         const geminiResolver = new GeminiResolver(context);
