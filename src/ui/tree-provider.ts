@@ -76,16 +76,51 @@ export class DocsTreeProvider implements vscode.TreeDataProvider<vscode.TreeItem
   }
 
   async search(): Promise<void> {
-    const input = await vscode.window.showInputBox({
-      prompt: "Search dependencies...",
-      placeHolder: "Type to fuzzy search...",
-      value: this.searchQuery
+    if (!this.resolvedResults || this.resolvedResults.length === 0) {
+      vscode.window.showInformationMessage("Scan dependencies first before searching");
+      return;
+    }
+
+    const results = this.resolvedResults.filter(r => r.docUrl);
+
+    const quickPick = vscode.window.createQuickPick();
+    quickPick.placeholder = "Type to search dependencies...";
+    quickPick.ignoreFocusOut = true;
+    quickPick.show();
+
+    quickPick.onDidChangeValue((value) => {
+      if (!value || value.trim() === "") {
+        quickPick.items = [];
+        return;
+      }
+
+      const fuzzyResults = fuzzysort.go(value, results, {
+        key: "name",
+        limit: 10,
+        threshold: -10000
+      });
+
+      if (fuzzyResults.length === 0) {
+        quickPick.items = [{ label: `No matches for "${value}"` }];
+        return;
+      }
+
+      quickPick.items = fuzzyResults.map(r => ({
+        label: r.obj.name,
+        description: r.obj.version || "unknown",
+        detail: r.obj.docUrl || undefined
+      }));
     });
 
-    if (input === undefined) { return; }
+    quickPick.onDidAccept(() => {
+      const selected = quickPick.selectedItems[0];
+      if (selected && selected.detail) {
+        vscode.commands.executeCommand("watchdocs.openDoc", selected.detail);
+        quickPick.hide();
+      }
+    });
 
-    this.searchQuery = input;
-    this.refresh();
+    quickPick.onDidHide(() => quickPick.dispose());
   }
 
   clearSearch(): void {
