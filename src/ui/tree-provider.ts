@@ -3,6 +3,7 @@ import fuzzysort from "fuzzysort";
 import { Dependency, DocResult } from "../models";
 import { resolver } from "../core/resolver/resolver";
 import { scanWorkspace } from "../core/scanner/scanner";
+import { exportDependenciesAsMarkdown } from "../core/export/export-markdown";
 import { readFile } from "../core/reader/reader";
 import { parsePackageJson, parseRequirementsTxt, parsePyProjectToml, parseGoMod, parseCargotoml, parsePomXml, parsePubspecYaml } from "../core/parsers";
 
@@ -92,6 +93,7 @@ export class DocsTreeProvider implements vscode.TreeDataProvider<vscode.TreeItem
     this._quickPick!.show();
   }
 
+
   private _ensureQuickPick(): void {
     if (this._quickPick) {
       return;
@@ -160,6 +162,21 @@ export class DocsTreeProvider implements vscode.TreeDataProvider<vscode.TreeItem
     this.refresh();
   }
 
+  async exportDependencies(): Promise<void> {
+
+  if (!this.resolvedResults || this.resolvedResults.length === 0) {
+    vscode.window.showInformationMessage("No dependencies to export");
+    return;
+  }
+
+  const dependencies = this.resolvedResults.filter(dep => dep.docUrl).map(dep => ({
+      name: dep.name,
+      link: dep.docUrl!
+    }));
+
+  await exportDependenciesAsMarkdown(dependencies);
+  }
+
   getTreeItem(element: vscode.TreeItem): vscode.TreeItem {
     return element;
   }
@@ -176,6 +193,11 @@ export class DocsTreeProvider implements vscode.TreeDataProvider<vscode.TreeItem
     }, "play"));
 
     if (this.resolvedResults && this.resolvedResults.length > 0) {
+      actionItems.push(new DependencyItem("Export Dependencies (.md)","Action",vscode.TreeItemCollapsibleState.None,{
+      command: "watchdocs.exportDependencies",
+      title: "Export Dependencies"
+    },"export"));
+
       actionItems.push(new DependencyItem("Search Dependencies", "Action", vscode.TreeItemCollapsibleState.None, {
         command: "watchdocs.search",
         title: "Search Dependencies"

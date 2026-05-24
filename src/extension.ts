@@ -1,8 +1,13 @@
 import * as vscode from "vscode";
 import { DocsTreeProvider } from "./ui/tree-provider";
 
+
 export function activate(context: vscode.ExtensionContext) {
   const provider = new DocsTreeProvider();
+
+  context.subscriptions.push(
+  vscode.commands.registerCommand("watchdocs.exportDependencies",() => provider.exportDependencies())
+  );
   
   vscode.window.registerTreeDataProvider("watchdocs.sidebar", provider);
 
