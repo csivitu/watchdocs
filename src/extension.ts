@@ -1,35 +1,40 @@
 import * as vscode from "vscode";
 import { DocsTreeProvider } from "./ui/tree-provider";
-import { GeminiResolver } from "./core/resolver/gemini-resolver";
 
 export function activate(context: vscode.ExtensionContext) {
-  const provider = new DocsTreeProvider(context);
+  const provider = new DocsTreeProvider();
+  
   vscode.window.registerTreeDataProvider("watchdocs.sidebar", provider);
 
+  const openDocsCommand = vscode.commands.registerCommand("watchdocs.openDoc", async (url: string) => {
+    try {
+      await vscode.commands.executeCommand("simpleBrowser.show", url);
+    } catch {
+      await vscode.env.openExternal(vscode.Uri.parse(url));
+    }
+  });
+  
   const scanCommand = vscode.commands.registerCommand("watchdocs.scan", async () => {
     await provider.scan();
+  });
+
+  const searchCommand = vscode.commands.registerCommand("watchdocs.search", async () => {
+    await provider.search();
+  });
+
+  const clearSearchCommand = vscode.commands.registerCommand("watchdocs.clearSearch", async () => {
+    provider.clearSearch();
   });
 
   const helloCommand = vscode.commands.registerCommand("watchdocs.helloWorld", () => {
     vscode.window.showInformationMessage("Hello from WatchDocs!");
   });
 
-  const setApiKeyCommand = vscode.commands.registerCommand("watchdocs.setApiKey", async () => {
-    await GeminiResolver.setApiKey(context);
-    provider.refresh();
-  });
-
   const refreshCommand = vscode.commands.registerCommand("watchdocs.refreshTreeView", async () => {
     provider.refresh();
   });
 
-  const clearApiKeyCommand = vscode.commands.registerCommand("watchdocs.clearApiKey", async () => {
-    await context.secrets.delete("gemini-api-key");
-    vscode.window.showInformationMessage("Gemini Api Key Removed");
-    provider.refresh();
-  });  
-
-  context.subscriptions.push(scanCommand, helloCommand, setApiKeyCommand, refreshCommand, clearApiKeyCommand);
+  context.subscriptions.push(scanCommand, searchCommand, clearSearchCommand, helloCommand, refreshCommand, openDocsCommand);
 }
 
 export function deactivate() { }

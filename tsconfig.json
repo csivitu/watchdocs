@@ -11,6 +11,7 @@
 		"outDir": "out",
 		"strict": true,
 		"skipLibCheck": true,
-		"skipDefaultLibCheck": true
+		"skipDefaultLibCheck": true,
+		"types": ["mocha", "node"]
 	}
 }

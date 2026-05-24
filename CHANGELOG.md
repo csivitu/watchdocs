@@ -4,6 +4,34 @@ All notable changes to the WatchDocs extension will be documented in this file.
 
 This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.1-alpha] - 2026-05-24
+
+### Added
+- **Fuzzy Search**: Real-time dependency search with QuickPick UI and clear search action
+- **Embedded Browser**: Docs open in VS Code's simple browser with external fallback
+
+### Changed
+- **Search Performance**: Pre-warmed fuzzysort and cached QuickPick for instant search response
+
+---
+
+## [0.3.0-alpha] - 2026-05-24
+
+### Added
+- **Rust Support**: Added full support for `Cargo.toml` files and online Rust dependency resolution.
+- **Maven Support**: Added full support for `pom.xml` files and online Java dependency resolution.
+- **Dart/Flutter Support**: Added full support for `pubspec.yaml` files and online Dart/Flutter dependency resolution.
+
+### Changed
+- **Simplified Resolution**: Removed Gemini AI fallback, now using two-tier local → online resolution.
+- **Zero Configuration**: No API key required - extension works immediately after installation.
+
+### Removed
+- Gemini AI integration and API key management.
+- `watchdocs.setApiKey` and `watchdocs.clearApiKey` commands.
+
+---
+
 ## [0.2.1-alpha] - 2026-05-05
 
 ### Added

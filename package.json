@@ -7,6 +7,7 @@
   "engines": {
     "vscode": "^1.90.0"
   },
+  "extensionDependencies": ["vscode.simple-browser"],
   "activationEvents": [
     "onView:watchdocs.sidebar"
   ],
@@ -30,8 +31,16 @@
         "title": "Scan Dependencies"
       },
       {
-        "command": "watchdocs.setApiKey",
-        "title": "Set Gemini Api Key"
+        "command": "watchdocs.search",
+        "title": "Search Dependencies"
+      },
+      {
+        "command": "watchdocs.clearSearch",
+        "title": "Clear Search"
+      },
+      {
+        "command": "watchdocs.refreshTreeView",
+        "title": "Refresh Tree View"
       }
     ],
     "viewsContainers": {
@@ -46,9 +55,9 @@
     "views": {
       "watchdocs": [
         {
-          "id": "watchdocs.sidebar",
-          "name": "Project Docs",
-          "icon": "resources/watchdocs-v2.svg"
+            "id": "watchdocs.sidebar",
+            "name": "Project Docs",
+            "icon": "resources/watchdocs-v2.svg"
         }
       ]
     }
@@ -70,7 +79,7 @@
   "devDependencies": {
     "@types/mocha": "^10.0.10",
     "@types/node": "22.x",
-    "@types/vscode": "^1.109.0",
+    "@types/vscode": "^1.120.0",
     "@vscode/test-cli": "^0.0.12",
     "@vscode/test-electron": "^2.5.2",
     "esbuild": "^0.27.3",
@@ -82,7 +91,6 @@
     "typescript-eslint": "^8.56.1"
   },
   "dependencies": {
-    "@google/genai": "^1.46.0",
     "dotenv": "^17.3.1",
     "fuzzysort": "^3.1.0"
   }

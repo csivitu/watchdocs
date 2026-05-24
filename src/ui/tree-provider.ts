@@ -1,10 +1,10 @@
 import * as vscode from "vscode";
+import fuzzysort from "fuzzysort";
 import { Dependency, DocResult } from "../models";
-import { GeminiResolver } from "../core/resolver/gemini-resolver";
 import { resolver } from "../core/resolver/resolver";
 import { scanWorkspace } from "../core/scanner/scanner";
 import { readFile } from "../core/reader/reader";
-import { parsePackageJson, parseRequirementsTxt, parsePyProjectToml, parseGoMod } from "../core/parsers";
+import { parsePackageJson, parseRequirementsTxt, parsePyProjectToml, parseGoMod, parseCargotoml, parsePomXml, parsePubspecYaml } from "../core/parsers";
 
 export class DocsTreeProvider implements vscode.TreeDataProvider<vscode.TreeItem> {
   private _onDidChangeTreeData = new vscode.EventEmitter<vscode.TreeItem | undefined>();
@@ -12,8 +12,10 @@ export class DocsTreeProvider implements vscode.TreeDataProvider<vscode.TreeItem
 
   private scannedDeps: Dependency[] | null = null;
   private resolvedResults: DocResult[] | null = null;
+  private searchQuery: string = "";
+  private _quickPick: vscode.QuickPick<vscode.QuickPickItem> | null = null;
 
-  constructor(private context: vscode.ExtensionContext) {}
+  constructor() {}
 
   refresh(): void {
     this._onDidChangeTreeData.fire(undefined);
@@ -26,7 +28,7 @@ export class DocsTreeProvider implements vscode.TreeDataProvider<vscode.TreeItem
       this.scannedDeps = [];
       this.resolvedResults = [];
       this.refresh();
-      vscode.window.showInformationMessage("No package.json or requirements.txt found");
+      vscode.window.showInformationMessage("No manifest files found");
       return;
     }
 
@@ -45,6 +47,12 @@ export class DocsTreeProvider implements vscode.TreeDataProvider<vscode.TreeItem
         }
       } else if (manifest.type === "go") {
         deps = parseGoMod(content);
+      } else if (manifest.type === "cargo") {
+        deps = parseCargotoml(content);
+      } else if (manifest.type === "maven") {
+        deps = parsePomXml(content);
+      } else if (manifest.type === "pub") {
+        deps = parsePubspecYaml(content);
       }
 
       allDeps.push(...deps);
@@ -52,9 +60,9 @@ export class DocsTreeProvider implements vscode.TreeDataProvider<vscode.TreeItem
 
     this.scannedDeps = allDeps;
 
-    let statusMessage = vscode.window.setStatusBarMessage("Fetching docs via Gemini...");
+    let statusMessage = vscode.window.setStatusBarMessage("Fetching Documentation...");
 
-    this.resolvedResults = await resolver(allDeps, this.context, (partialResults) => {
+    this.resolvedResults = await resolver(allDeps, (partialResults) => {
       this.resolvedResults = partialResults;
       this.refresh();
     });
@@ -66,6 +74,90 @@ export class DocsTreeProvider implements vscode.TreeDataProvider<vscode.TreeItem
     }
     
     this.refresh();
+    this._ensureQuickPick();
+  }
+
+  async search(): Promise<void> {
+    if (!this.resolvedResults || this.resolvedResults.length === 0) {
+      vscode.window.showInformationMessage("Scan dependencies first before searching");
+      return;
+    }
+
+    if (!this._quickPick) {
+      this._ensureQuickPick();
+    }
+
+    this._quickPick!.value = "";
+    this._quickPick!.items = [];
+    this._quickPick!.show();
+  }
+
+  private _ensureQuickPick(): void {
+    if (this._quickPick) {
+      return;
+    }
+
+    const searchable = (this.resolvedResults || []).filter(r => r.docUrl);
+    fuzzysort.go("", searchable, { key: "name" });
+
+    const quickPick = vscode.window.createQuickPick();
+    quickPick.title = "Search Dependencies";
+    quickPick.placeholder = "Type to search dependencies...";
+    quickPick.ignoreFocusOut = true;
+    quickPick.buttons = [{ iconPath: new vscode.ThemeIcon("close"), tooltip: "Close Search" }];
+
+    quickPick.onDidTriggerButton(() => quickPick.hide());
+
+    quickPick.onDidChangeValue((value) => {
+      const results = this.resolvedResults?.filter(r => r.docUrl) || [];
+      if (!value || value.trim() === "") {
+        quickPick.items = [];
+        return;
+      }
+
+      const fuzzyResults = fuzzysort.go(value, results, {
+        key: "name",
+        limit: 10,
+        threshold: -10000
+      });
+
+      if (fuzzyResults.length === 0) {
+        quickPick.items = [
+          { label: `No matches for "${value}"` },
+          { label: "Clear search", iconPath: new vscode.ThemeIcon("clear-all"), alwaysShow: true }
+        ];
+        return;
+      }
+      
+      quickPick.items = fuzzyResults.map(r => ({
+        label: r.obj.name,
+        description: r.obj.version || "unknown",
+        detail: r.obj.docUrl || undefined
+      }));
+    });
+
+    quickPick.onDidAccept(() => {
+      const selected = quickPick.selectedItems[0];
+      if (!selected) { return; }
+
+      if (selected.label === "Clear search") {
+        quickPick.value = "";
+        quickPick.items = [];
+        return;
+      }
+
+      if (selected.detail) {
+        vscode.commands.executeCommand("watchdocs.openDoc", selected.detail);
+        quickPick.hide();
+      }
+    });
+
+    this._quickPick = quickPick;
+  }
+
+  clearSearch(): void {
+    this.searchQuery = "";
+    this.refresh();
   }
 
   getTreeItem(element: vscode.TreeItem): vscode.TreeItem {
@@ -73,57 +165,77 @@ export class DocsTreeProvider implements vscode.TreeDataProvider<vscode.TreeItem
   }
 
   async getChildren(element?: vscode.TreeItem): Promise<vscode.TreeItem[]> {
-    if (element) {
-      return Promise.resolve([]);
+    if (element && (element as any).children) {
+      return (element as any).children;
     }
 
-    const hasApiKey = await GeminiResolver.hasApiKey(this.context);
-    const items: vscode.TreeItem[] = [];
-
-    items.push(new DependencyItem("Scan Dependencies", "Action", vscode.TreeItemCollapsibleState.None, {
+    const actionItems: vscode.TreeItem[] = [];
+    actionItems.push(new DependencyItem("Scan Dependencies", "Action", vscode.TreeItemCollapsibleState.None, {
       command: "watchdocs.scan",
       title: "Scan Dependencies"
     }, "play"));
 
     if (this.resolvedResults && this.resolvedResults.length > 0) {
-      this.resolvedResults.forEach(result => {
-        items.push(new DependencyItem(
+      actionItems.push(new DependencyItem("Search Dependencies", "Action", vscode.TreeItemCollapsibleState.None, {
+        command: "watchdocs.search",
+        title: "Search Dependencies"
+      }, "search"));
+
+      if (this.searchQuery) {
+        actionItems.push(new DependencyItem("Clear Search", "Action", vscode.TreeItemCollapsibleState.None, {
+          command: "watchdocs.clearSearch",
+          title: "Clear Search"
+        }, "close"));
+      }
+    }
+
+    const depItems: vscode.TreeItem[] = [];
+    if (this.resolvedResults && this.resolvedResults.length > 0) {
+      let results = this.resolvedResults.filter(r => r.docUrl);
+
+      if (this.searchQuery) {
+        const fuzzyResults = fuzzysort.go(this.searchQuery, results, {
+          key: "name",
+          limit: 50,
+          threshold: -10000
+        });
+        results = fuzzyResults.map(r => r.obj);
+
+        if (results.length === 0) {
+          const item = new vscode.TreeItem(`No matches for "${this.searchQuery}"`, vscode.TreeItemCollapsibleState.None);
+          depItems.push(item);
+        }
+      }
+
+      results.forEach(result => {
+        depItems.push(new DependencyItem(
           result.name,
           result.version || "unknown",
           vscode.TreeItemCollapsibleState.None,
-          result.docUrl ? {
-            command: "vscode.open",
+          {
+            command: "watchdocs.openDoc",
             title: "Open Docs",
-            arguments: [vscode.Uri.parse(result.docUrl)]
-          } : undefined,
-          result.docUrl ? "link-external" : "question"
+            arguments: [result.docUrl, result.name, result.version || "unknown"]
+          },
+          "link-external"
         ));
       });
     } else if (this.scannedDeps !== null && this.scannedDeps.length === 0) {
-      items.push(new vscode.TreeItem("No dependencies found", vscode.TreeItemCollapsibleState.None));
+      depItems.push(new vscode.TreeItem("No dependencies found", vscode.TreeItemCollapsibleState.None));
     }
 
-    items.push(new ApiKeyItem(hasApiKey, this.context));
-
-    return items;
+    return [
+      new SectionItem("Actions", actionItems, "zap"),
+      new SectionItem("Dependencies", depItems, "file-code")
+    ];
   }
 }
 
-class ApiKeyItem extends vscode.TreeItem {
-  constructor(
-    hasApiKey: boolean,
-    private context: vscode.ExtensionContext
-  ) {
-    super(
-      hasApiKey ? "Gemini API Key Exist" : "Add Gemini API Key",
-      vscode.TreeItemCollapsibleState.None
-    );
-    this.command = {
-      command: "watchdocs.setApiKey",
-      title: "Set Gemini API Key"
-    };
-    this.iconPath = new vscode.ThemeIcon(hasApiKey ? "check" : "key");
-    this.tooltip = hasApiKey ? "Gemini API Key is set" : "Click to add your Gemini API Key";
+class SectionItem extends vscode.TreeItem {
+  constructor(label: string, children: vscode.TreeItem[], iconName: string) {
+    super(label, vscode.TreeItemCollapsibleState.Expanded);
+    (this as any).children = children;
+    this.iconPath = new vscode.ThemeIcon(iconName);
   }
 }
 
