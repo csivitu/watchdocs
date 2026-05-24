@@ -1,4 +1,5 @@
 import * as vscode from "vscode";
+import fuzzysort from "fuzzysort";
 import { Dependency, DocResult } from "../models";
 import { resolver } from "../core/resolver/resolver";
 import { scanWorkspace } from "../core/scanner/scanner";
@@ -11,6 +12,7 @@ export class DocsTreeProvider implements vscode.TreeDataProvider<vscode.TreeItem
 
   private scannedDeps: Dependency[] | null = null;
   private resolvedResults: DocResult[] | null = null;
+  private searchQuery: string = "";
 
   constructor() {}
 
@@ -73,6 +75,24 @@ export class DocsTreeProvider implements vscode.TreeDataProvider<vscode.TreeItem
     this.refresh();
   }
 
+  async search(): Promise<void> {
+    const input = await vscode.window.showInputBox({
+      prompt: "Search dependencies...",
+      placeHolder: "Type to fuzzy search...",
+      value: this.searchQuery
+    });
+
+    if (input === undefined) { return; }
+
+    this.searchQuery = input;
+    this.refresh();
+  }
+
+  clearSearch(): void {
+    this.searchQuery = "";
+    this.refresh();
+  }
+
   getTreeItem(element: vscode.TreeItem): vscode.TreeItem {
     return element;
   }
@@ -88,23 +108,51 @@ export class DocsTreeProvider implements vscode.TreeDataProvider<vscode.TreeItem
       title: "Scan Dependencies"
     }, "play"));
 
+    if (this.resolvedResults && this.resolvedResults.length > 0) {
+      actionItems.push(new DependencyItem("Search Dependencies", "Action", vscode.TreeItemCollapsibleState.None, {
+        command: "watchdocs.search",
+        title: "Search Dependencies"
+      }, "search"));
+
+      if (this.searchQuery) {
+        actionItems.push(new DependencyItem("Clear Search", "Action", vscode.TreeItemCollapsibleState.None, {
+          command: "watchdocs.clearSearch",
+          title: "Clear Search"
+        }, "close"));
+      }
+    }
+
     const depItems: vscode.TreeItem[] = [];
     if (this.resolvedResults && this.resolvedResults.length > 0) {
-      this.resolvedResults
-        .filter(r => r.docUrl)
-        .forEach(result => {
-          depItems.push(new DependencyItem(
-            result.name,
-            result.version || "unknown",
-            vscode.TreeItemCollapsibleState.None,
-            {
-              command: "watchdocs.openDoc",
-              title: "Open Docs",
-              arguments: [result.docUrl, result.name, result.version || "unknown"]
-            },
-            "link-external"
-          ));
+      let results = this.resolvedResults.filter(r => r.docUrl);
+
+      if (this.searchQuery) {
+        const fuzzyResults = fuzzysort.go(this.searchQuery, results, {
+          key: "name",
+          limit: 50,
+          threshold: -10000
         });
+        results = fuzzyResults.map(r => r.obj);
+
+        if (results.length === 0) {
+          const item = new vscode.TreeItem(`No matches for "${this.searchQuery}"`, vscode.TreeItemCollapsibleState.None);
+          depItems.push(item);
+        }
+      }
+
+      results.forEach(result => {
+        depItems.push(new DependencyItem(
+          result.name,
+          result.version || "unknown",
+          vscode.TreeItemCollapsibleState.None,
+          {
+            command: "watchdocs.openDoc",
+            title: "Open Docs",
+            arguments: [result.docUrl, result.name, result.version || "unknown"]
+          },
+          "link-external"
+        ));
+      });
     } else if (this.scannedDeps !== null && this.scannedDeps.length === 0) {
       depItems.push(new vscode.TreeItem("No dependencies found", vscode.TreeItemCollapsibleState.None));
     }

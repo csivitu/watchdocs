@@ -29,6 +29,18 @@
       {
         "command": "watchdocs.scan",
         "title": "Scan Dependencies"
+      },
+      {
+        "command": "watchdocs.search",
+        "title": "Search Dependencies"
+      },
+      {
+        "command": "watchdocs.clearSearch",
+        "title": "Clear Search"
+      },
+      {
+        "command": "watchdocs.refreshTreeView",
+        "title": "Refresh Tree View"
       }
     ],
     "viewsContainers": {

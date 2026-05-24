@@ -18,6 +18,14 @@ export function activate(context: vscode.ExtensionContext) {
     await provider.scan();
   });
 
+  const searchCommand = vscode.commands.registerCommand("watchdocs.search", async () => {
+    await provider.search();
+  });
+
+  const clearSearchCommand = vscode.commands.registerCommand("watchdocs.clearSearch", async () => {
+    provider.clearSearch();
+  });
+
   const helloCommand = vscode.commands.registerCommand("watchdocs.helloWorld", () => {
     vscode.window.showInformationMessage("Hello from WatchDocs!");
   });
@@ -26,7 +34,7 @@ export function activate(context: vscode.ExtensionContext) {
     provider.refresh();
   });
 
-  context.subscriptions.push(scanCommand, helloCommand, refreshCommand, openDocsCommand);
+  context.subscriptions.push(scanCommand, searchCommand, clearSearchCommand, helloCommand, refreshCommand, openDocsCommand);
 }
 
 export function deactivate() { }
