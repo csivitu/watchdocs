@@ -14,6 +14,7 @@ WatchDocs is a VS Code extension that streamlines development by automatically s
 - **High-Performance** - 16-concurrency worker pool with incremental UI updates (batches of 4)
 - **Multi-Ecosystem** - npm, pip, go, cargo, maven, pub
 - **Interactive Sidebar** - View all dependencies with one-click doc access
+- **Fuzzy Search** - Real-time dependency search with typo tolerance via QuickPick UI
 
 **Who it's for:** Developers working with multiple dependencies, teams referencing docs frequently, anyone reducing time spent searching for documentation.
 
@@ -34,6 +35,7 @@ WatchDocs is a VS Code extension that streamlines development by automatically s
 - **High-Performance Worker Pool** - 16-concurrency worker pool for rapid dependency resolution
 - **Multi-Ecosystem Support** - npm, pip, go, cargo, maven, pub
 - **Interactive Sidebar** - View all dependencies in one place with one-click doc access
+- **Fuzzy Search** - QuickPick search with instant filtering, typo tolerance, and clear search action
 - **Progressive UI Updates** - Results appear incrementally in batches of 4 as they're resolved
 - **Smart Caching** - 277+ packages in local registry (offline), with online fallback for real-time resolution
 
@@ -65,7 +67,14 @@ code --install-extension watchdocs.watchdocs
 2. **Click the WatchDocs icon** in the Activity Bar (left sidebar)
 3. **Click "Scan Dependencies"** (play button) in the sidebar
 4. **Wait for resolution** - dependencies will appear as they're found
-5. **Click any dependency** to open its official documentation in your browser
+5. **Click any dependency** to open its official documentation in VS Code's embedded browser
+
+### Search Dependencies
+
+1. **Click "Search Dependencies"** in sidebar or run `Search Dependencies` from Command Palette
+2. **Type to filter** - results appear instantly with fuzzy matching and typo tolerance
+3. **Click any result** to open its docs
+4. **Click "Clear search"** or press Escape to reset
 
 ### Example
 
@@ -86,6 +95,7 @@ Sidebar displays:
 | Command | Description |
 |---------|-------------|
 | `watchdocs.scan` | Scan workspace for dependencies and resolve documentation URLs |
+| `watchdocs.search` | Open fuzzy search QuickPick for dependencies |
 | `watchdocs.refreshTreeView` | Refresh the dependency tree view |
 | `watchdocs.helloWorld` | Show "Hello from WatchDocs!" message (debug) |
 
@@ -207,6 +217,11 @@ Report issues on the [GitHub repository](#).
 ---
 
 ## Release Notes
+
+### 0.3.1-alpha (2026-05-24)
+- **Fuzzy Search**: Real-time dependency search with QuickPick UI
+- **Embedded Browser**: Docs open in VS Code's simple browser with external fallback
+- **Search UX**: Clear search action, pre-warmed search for instant response
 
 ### 0.3.0-alpha (2026-05-24)
 - Added Rust (`Cargo.toml`), Maven (`pom.xml`), and Dart/Flutter (`pubspec.yaml`) support

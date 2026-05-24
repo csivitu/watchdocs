@@ -4,6 +4,17 @@ All notable changes to the WatchDocs extension will be documented in this file.
 
 This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.1-alpha] - 2026-05-24
+
+### Added
+- **Fuzzy Search**: Real-time dependency search with QuickPick UI and clear search action
+- **Embedded Browser**: Docs open in VS Code's simple browser with external fallback
+
+### Changed
+- **Search Performance**: Pre-warmed fuzzysort and cached QuickPick for instant search response
+
+---
+
 ## [0.3.0-alpha] - 2026-05-24
 
 ### Added
