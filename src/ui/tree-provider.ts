@@ -101,8 +101,12 @@ export class DocsTreeProvider implements vscode.TreeDataProvider<vscode.TreeItem
     fuzzysort.go("", searchable, { key: "name" });
 
     const quickPick = vscode.window.createQuickPick();
+    quickPick.title = "Search Dependencies";
     quickPick.placeholder = "Type to search dependencies...";
     quickPick.ignoreFocusOut = true;
+    quickPick.buttons = [{ iconPath: new vscode.ThemeIcon("close"), tooltip: "Close Search" }];
+
+    quickPick.onDidTriggerButton(() => quickPick.hide());
 
     quickPick.onDidChangeValue((value) => {
       const results = this.resolvedResults?.filter(r => r.docUrl) || [];
@@ -118,7 +122,10 @@ export class DocsTreeProvider implements vscode.TreeDataProvider<vscode.TreeItem
       });
 
       if (fuzzyResults.length === 0) {
-        quickPick.items = [{ label: `No matches for "${value}"` }];
+        quickPick.items = [
+          { label: `No matches for "${value}"` },
+          { label: "Clear search", iconPath: new vscode.ThemeIcon("clear-all"), alwaysShow: true }
+        ];
         return;
       }
       
@@ -131,7 +138,15 @@ export class DocsTreeProvider implements vscode.TreeDataProvider<vscode.TreeItem
 
     quickPick.onDidAccept(() => {
       const selected = quickPick.selectedItems[0];
-      if (selected && selected.detail) {
+      if (!selected) { return; }
+
+      if (selected.label === "Clear search") {
+        quickPick.value = "";
+        quickPick.items = [];
+        return;
+      }
+
+      if (selected.detail) {
         vscode.commands.executeCommand("watchdocs.openDoc", selected.detail);
         quickPick.hide();
       }
