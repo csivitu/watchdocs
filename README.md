@@ -6,17 +6,16 @@
 
 ## Overview
 
-WatchDocs is a VS Code extension that streamlines development by automatically scanning your workspace for dependency manifest files (`package.json`, `Cargo.toml`, `go.mod`, `requirements.txt`, `pyproject.toml`, `pom.xml`, `pubspec.yaml`), extracting the listed packages, and providing instant clickable links to their official documentation.
+WatchDocs is a VS Code extension that streamlines development by automatically scanning your workspace for dependency manifest files, extracting packages, and providing instant clickable links to their official documentation.
 
-**Who it's for:**
-- Developers working with multiple dependencies across different ecosystems
-- Teams who frequently reference documentation during development
-- Anyone who wants to reduce time spent searching for docs
+**Features:**
+- **Auto Dependency Detection** - Scans for `package.json`, `Cargo.toml`, `go.mod`, `requirements.txt`, `pyproject.toml`, `pom.xml`, `pubspec.yaml`
+- **Two-Tier Resolution** - Local registry cache (277+ packages) → Online registries for maximum coverage
+- **High-Performance** - 16-concurrency worker pool with incremental UI updates (batches of 4)
+- **Multi-Ecosystem** - npm, pip, go, cargo, maven, pub
+- **Interactive Sidebar** - View all dependencies with one-click doc access
 
-**Problem it solves:**
-- No more manually searching for documentation URLs
-- Eliminates bookmarking and maintaining doc links
-- Provides a centralized view of all project dependencies with direct access to their docs
+**Who it's for:** Developers working with multiple dependencies, teams referencing docs frequently, anyone reducing time spent searching for documentation.
 
 ---
 
@@ -70,26 +69,14 @@ code --install-extension watchdocs.watchdocs
 
 ### Example
 
-**Input:**
-```
-Workspace contains:
-- /my-project/package.json (with react, next, express)
-- /my-project/requirements.txt (with django, requests)
-- /my-project/go.mod (with gin, gorm)
-```
+Workspace with `package.json` (react, next, express) and `requirements.txt` (django, requests):
 
-**Output:**
 ```
 Sidebar displays:
-├── Scan Dependencies ▶
 ├── react 18.2.0 → https://react.dev/
 ├── next 14.1.0 → https://nextjs.org/docs
-├── express 4.18.0 → https://expressjs.com/
 ├── django 4.2.0 → https://docs.djangoproject.com/
-├── requests 2.31.0 → https://requests.readthedocs.io/
-├── gin 1.9.1 → https://pkg.go.dev/github.com/gin-gonic/gin
-├── gorm 1.25.7 → https://gorm.io/
-└── tokio 1.35.0 → https://docs.rs/tokio
+└── requests 2.31.0 → https://requests.readthedocs.io/
 ```
 
 ---
@@ -124,85 +111,11 @@ No default keyboard shortcuts. You can add custom keybindings in `keybindings.js
 
 ## How It Works
 
-### Overview
-
 WatchDocs uses a **two-tier hybrid resolution strategy**:
-1. **Local Registry Cache** (fastest, offline-capable) - Checks pre-populated JSON registries (277+ packages across 6 ecosystems)
-2. **Online Registries** (fast, requires internet) - Fetches homepage URLs directly from npmjs.org, PyPI, pkg.go.dev, crates.io, Maven Central, and pub.dev in parallel using a 16-concurrency worker pool
+1. **Local Registry Cache** (fastest, offline-capable) - Pre-populated JSON registries (277+ packages across 6 ecosystems)
+2. **Online Registries** (fast, requires internet) - Fetches from npmjs.org, PyPI, pkg.go.dev, crates.io, Maven Central, and pub.dev using 16-concurrency worker pool
 
-This approach ensures fast resolution for popular packages while maintaining coverage for niche dependencies. Packages not found in either tier are not displayed.
-
-### Execution Flow
-
-1. **Trigger** - User clicks "Scan Dependencies" button in sidebar
-2. **File Discovery** - Scanner searches workspace for manifest files (`package.json`, `requirements.txt`, `pyproject.toml`, `go.mod`, `Cargo.toml`, `pom.xml`, `pubspec.yaml`)
-3. **File Reading** - Reader loads each manifest file using VS Code's virtual file system, by getting utf-8 then converting to string
-4. **Parsing** - Ecosystem-specific parsers extract dependency names and versions from string of each file
-5. **Resolution** - Main resolver orchestrates two-tier lookup:
-   - Tier 1: Local registry cache (instant)
-   - Tier 2: Online registry fetch via 16-concurrency worker pool (npm, pip, go, cargo, maven, pub)
-6. **Display** - Results rendered incrementally in batches of 4 in sidebar tree view, with registry lookup at instant
-
-### Core Components
-
-| Component | Responsibility |
-|-----------|----------------|
-| `DocsTreeProvider` | Manages sidebar tree state and user interactions |
-| `scanWorkspace()` | Finds all manifest files with include/exclude patterns |
-| `readFile()` | Reads file content from VS Code's virtual file system |
-| `parsers/` | Ecosystem-specific parsers for npm, pip, go, cargo, maven, and pub |
-| `resolver()` | Orchestrates two-tier resolution strategy with batch progress callbacks |
-| `registryResolver()` | Looks up docs from local JSON registries |
-| `online*Resolver()` | Fetches documentation URLs from online registries (npm, pip, go, cargo, maven, pub) in real-time |
-| `cache` | In-memory registry cache |
-
-### Data Flow
-
-```
-User Action (Click Scan)
-    ↓
-DocsTreeProvider.scan()
-    ↓
-scanWorkspace() → [package.json, Cargo.toml, go.mod, ...]
-    ↓
-readFile() → file contents
-    ↓
-parsers → Dependency[]
-    ↓
-resolver()
-    ├─→ registryResolver() → DocResult[] (found)
-    └─→ Worker Pool (16 concurrency)
-          ├─→ onlineNpmResolver() → DocResult[] (npm packages)
-          ├─→ onlinePipResolver() → DocResult[] (pip packages)
-          ├─→ onlineGoResolver() → DocResult[] (go packages)
-          ├─→ onlineCargoResolver() → DocResult[] (cargo packages)
-          ├─→ onlineMavenResolver() → DocResult[] (maven packages)
-          └─→ onlinePubResolver() → DocResult[] (pub packages)
-    ↓
-Sidebar Tree View (updates in batches of 4)
-```
-
-### Walkthrough
-
-**Scenario:** User has a React + Express + Axios project
-
-1. User clicks **Scan Dependencies** in sidebar
-2. Extension searches workspace, finds `/src/package.json`
-3. Reads file content: `{"dependencies": {"react": "^18.2.0", "express": "^4.18.0", "axios": "^1.6.0"}}`
-4. Parses to: `[{name: "react", version: "18.2.0", ecosystem: "npm"}, ...]`
-5. Calls `resolver()` with progress callback
-6. **Tier 1 - Registry lookup:**
-   - Loads `npm.json` from resources (cached in memory)
-   - Finds "react" → `https://react.dev/`
-   - Finds "express" → `https://expressjs.com/`
-   - Package "axios" not found in local cache
-7. **Tier 2 - Online NPM lookup via Worker Pool:** (for missing npm packages)
-   - Fetches `https://registry.npmjs.org/axios/latest`
-   - Extracts `homepage` field from response
-   - Returns `https://axios-http.com/`
-8. Progress callback updates UI incrementally in batches of 4
-9. Sidebar displays all resolved dependencies with external link icons
-10. User clicks "react" → browser opens `https://react.dev/`
+**Execution Flow:** User clicks "Scan Dependencies" → Scanner finds manifest files → Parsers extract dependencies → Resolver looks up docs (local cache → online) → Results displayed incrementally in sidebar.
 
 ---
 
@@ -279,67 +192,42 @@ watchdocs/
 
 ---
 
-## Known Issues
-
-- **Limited Pip Format Support** - Only handles `package==version` format; does not support `>=`, `<=`, `~=`, or extras
-- **No DevDependency Distinction** - npm `devDependencies` shown alongside `dependencies` without visual distinction
-- **Single Workspace Limitation** - Only scans first workspace folder in multi-root workspaces
-
 Report issues on the [GitHub repository](#).
 
 ---
 
 ## Roadmap
 
-### v0.2.1 (Current)
-- [x] High-Performance Worker Pool (16 concurrency)
-- [x] Incremental UI Updates (batches of 4)
-- [x] Implemented `go.mod` parser and online resolution
-- [x] Implemented online NPM resolver for real-time registry fetches
-- [x] Two-tier resolution strategy (local → online)
-
-### v0.3.0 (Planned)
-- [ ] Visual distinction between dependencies and devDependencies
+### v0.3.1 (Planned)
 - [ ] Visual distinction between dependencies and devDependencies
 - [ ] Automatic rescanning on manifest file changes
 - [ ] Version-specific documentation links
-- [ ] Offline mode toggle (disable AI calls)
-- [ ] Custom registry JSON support (user-provided)
 - [ ] Documentation preview panel (embedded docs)
-
-### Future Considerations
-- [ ] Multi-root workspace support
-- [ ] Dependency update notifications
-- [ ] Security vulnerability alerts
-- [ ] Documentation search within sidebar
-- [ ] Export dependency list (Markdown, JSON)
 
 ---
 
 ## Release Notes
 
+### 0.3.0-alpha (2026-05-24)
+- Added Rust (`Cargo.toml`), Maven (`pom.xml`), and Dart/Flutter (`pubspec.yaml`) support
+- Removed Gemini AI requirement - works instantly with zero configuration
+- Simplified to two-tier resolution: local registry → online
+
 ### 0.2.1-alpha (2026-05-05)
-- **High-Performance Worker Pool**: Implemented a 16-concurrency worker pool for rapid dependency resolution.
-- **Incremental UI Updates**: Dependency results now appear in batches of 4 for better UI responsiveness.
-- **Go Support**: Added full support for `go.mod` files and online Go dependency resolution.
-- **Pip Support**: Added full support for `requirements.txt` & `pyproject.toml` files and online pip dependency resolution.
-- **Fuzzy Search**: Filter sidebar items using fuzzysort.
+- 16-concurrency worker pool for faster dependency resolution
+- Go (`go.mod`) and full Pip (`requirements.txt`, `pyproject.toml`) support
+- Incremental UI updates in batches of 4
 
 ### 0.2.0-alpha (2026-04-01)
-- Implemented online NPM resolver for real-time registry fetches
-- Three-tier resolution strategy (local → online → AI)
-- Improved coverage for npm packages not in local registry
-- Updated documentation with new resolution flow
+- Online NPM resolver for packages not in local cache
+- Three-tier resolution: local → online → AI fallback
 
-### 0.1.0-alpha (2026-03-30)
-- **Initial alpha release**
-- Core dependency scanning for npm and pip ecosystems
-- Hybrid resolution engine (registry + Gemini AI)
+### 0.1.0-alpha (2026-03-29)
+- Initial release with npm and pip dependency scanning
+- Hybrid resolution (local registry + Gemini AI)
 - Interactive sidebar with clickable documentation links
-- Secure API key storage using VS Code secrets
-- Pre-populated registry with 260+ popular packages
-- Progress reporting with incremental UI updates
-- Parser unit tests and standalone test scripts
+
+See [CHANGELOG.md](CHANGELOG.md) for full details.
 
 ---
 
@@ -381,51 +269,26 @@ npm run package
 
 ## Testing
 
-### Run Tests
-
 ```bash
-# Compile tests and run
 npm test
 ```
 
-### Test Coverage
-
-Tests located in `src/test/`:
-- `extension.test.ts` - Extension activation and command tests
-- `parser.test.ts` - Parser unit tests (npm, pip)
-- `pip-resolver.test.ts` - Online pip resolver tests
-
-### Write New Tests
-
-1. Create test file matching pattern `*.test.ts`
-2. Use Mocha assertion library (`assert.strictEqual`, etc.)
-3. Run tests via Testing view in VS Code or `npm test`
+Tests in `src/test/`: `extension.test.ts`, `parser.test.ts`, `pip-resolver.test.ts`. Create new tests matching `*.test.ts` pattern using Mocha assertions.
 
 ---
 
 ## Contributing
 
-Contributions are welcome! Here's how to help:
+Contributions welcome! Here's how to help:
 
-### Ways to Contribute
-- **Add Registry Entries** - Submit PRs adding popular packages to `resources/registries/*.json`
-- **New Parsers** - Implement parsers for additional manifest formats (Cargo.toml, pom.xml, etc.)
-- **Bug Fixes** - Report and fix issues via GitHub
-- **Feature Requests** - Open issues with detailed use cases
+- **Add Registry Entries** - Submit PRs adding packages to `resources/registries/*.json`
+- **New Parsers** - Implement parsers for additional manifest formats
+- **Bug Fixes & Features** - Report/fix issues via GitHub
 - **Documentation** - Improve README, add examples, fix typos
 
-### Development Guidelines
-1. Follow existing code style (2-space indentation, TypeScript strict mode)
-2. Add tests for new functionality
-3. Update README for user-facing changes
-4. Use meaningful commit messages
+**Guidelines:** Follow existing code style (2-space indentation, TypeScript strict mode), add tests for new functionality, use meaningful commit messages.
 
-### Submitting a PR
-1. Fork the repository
-2. Create a feature branch (`git checkout -b feature/add-cargo-parser`)
-3. Make changes and test locally
-4. Commit with clear messages
-5. Open pull request with description
+**Submitting a PR:** Fork → Create feature branch (`git checkout -b feature/add-parser`) → Make changes & test → Commit → Open PR with description.
 
 ---
 
