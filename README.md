@@ -22,7 +22,7 @@ WatchDocs is a VS Code extension that streamlines development by automatically s
 
 ## Preview
 
-![WatchDocs Demo](resources/demo.webp)
+![WatchDocs Demo](resources/demo-0.3.1.webp)
 
 *Sidebar showing detected dependencies with clickable documentation links*
 
