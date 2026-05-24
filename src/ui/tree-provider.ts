@@ -13,6 +13,7 @@ export class DocsTreeProvider implements vscode.TreeDataProvider<vscode.TreeItem
   private scannedDeps: Dependency[] | null = null;
   private resolvedResults: DocResult[] | null = null;
   private searchQuery: string = "";
+  private _quickPick: vscode.QuickPick<vscode.QuickPickItem> | null = null;
 
   constructor() {}
 
@@ -73,6 +74,7 @@ export class DocsTreeProvider implements vscode.TreeDataProvider<vscode.TreeItem
     }
     
     this.refresh();
+    this._ensureQuickPick();
   }
 
   async search(): Promise<void> {
@@ -81,14 +83,29 @@ export class DocsTreeProvider implements vscode.TreeDataProvider<vscode.TreeItem
       return;
     }
 
-    const results = this.resolvedResults.filter(r => r.docUrl);
+    if (!this._quickPick) {
+      this._ensureQuickPick();
+    }
+
+    this._quickPick!.value = "";
+    this._quickPick!.items = [];
+    this._quickPick!.show();
+  }
+
+  private _ensureQuickPick(): void {
+    if (this._quickPick) {
+      return;
+    }
+
+    const searchable = (this.resolvedResults || []).filter(r => r.docUrl);
+    fuzzysort.go("", searchable, { key: "name" });
 
     const quickPick = vscode.window.createQuickPick();
     quickPick.placeholder = "Type to search dependencies...";
     quickPick.ignoreFocusOut = true;
-    quickPick.show();
 
     quickPick.onDidChangeValue((value) => {
+      const results = this.resolvedResults?.filter(r => r.docUrl) || [];
       if (!value || value.trim() === "") {
         quickPick.items = [];
         return;
@@ -104,7 +121,7 @@ export class DocsTreeProvider implements vscode.TreeDataProvider<vscode.TreeItem
         quickPick.items = [{ label: `No matches for "${value}"` }];
         return;
       }
-
+      
       quickPick.items = fuzzyResults.map(r => ({
         label: r.obj.name,
         description: r.obj.version || "unknown",
@@ -120,7 +137,7 @@ export class DocsTreeProvider implements vscode.TreeDataProvider<vscode.TreeItem
       }
     });
 
-    quickPick.onDidHide(() => quickPick.dispose());
+    this._quickPick = quickPick;
   }
 
   clearSearch(): void {
