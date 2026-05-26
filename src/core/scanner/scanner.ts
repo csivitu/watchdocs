@@ -26,7 +26,7 @@ export async function scanWorkspace(): Promise<ManifestFile[]> {
             case uriPath.endsWith("pubspec.yaml"):
                 return { uri, type: "pub" };
             case uriPath.endsWith("gemfile"):
-                return { uri, type: "gem" };
+                return { uri, type: "bundler" };
             default:
                 return { uri, type: "unknown" };
         }

@@ -5,7 +5,7 @@ import { resolver } from "../core/resolver/resolver";
 import { scanWorkspace } from "../core/scanner/scanner";
 import { exportDependenciesAsMarkdown } from "../core/export/export-markdown";
 import { readFile } from "../core/reader/reader";
-import { parsePackageJson, parseRequirementsTxt, parsePyProjectToml, parseGoMod, parseCargotoml, parsePomXml, parsePubspecYaml } from "../core/parsers";
+import { parsePackageJson, parseRequirementsTxt, parsePyProjectToml, parseGoMod, parseCargotoml, parsePomXml, parsePubspecYaml, parseGemfile } from "../core/parsers";
 
 export class DocsTreeProvider implements vscode.TreeDataProvider<vscode.TreeItem> {
   private _onDidChangeTreeData = new vscode.EventEmitter<vscode.TreeItem | undefined>();
@@ -54,6 +54,8 @@ export class DocsTreeProvider implements vscode.TreeDataProvider<vscode.TreeItem
         deps = parsePomXml(content);
       } else if (manifest.type === "pub") {
         deps = parsePubspecYaml(content);
+      }else if (manifest.type === "bundler") {
+        deps = parseGemfile(content);
       }
 
       allDeps.push(...deps);
@@ -192,16 +194,17 @@ export class DocsTreeProvider implements vscode.TreeDataProvider<vscode.TreeItem
       title: "Scan Dependencies"
     }, "play"));
 
-    if (this.resolvedResults && this.resolvedResults.length > 0) {
-      actionItems.push(new DependencyItem("Export Dependencies (.md)","Action",vscode.TreeItemCollapsibleState.None,{
-      command: "watchdocs.exportDependencies",
-      title: "Export Dependencies"
-    },"export"));
+   if (this.resolvedResults && this.resolvedResults.length > 0) {
 
-      actionItems.push(new DependencyItem("Search Dependencies", "Action", vscode.TreeItemCollapsibleState.None, {
-        command: "watchdocs.search",
-        title: "Search Dependencies"
-      }, "search"));
+  actionItems.push(new DependencyItem("Search Dependencies", "Action", vscode.TreeItemCollapsibleState.None, {
+    command: "watchdocs.search",
+    title: "Search Dependencies"
+  }, "search"));
+
+  actionItems.push(new DependencyItem("Export Dependencies (.md)","Action",vscode.TreeItemCollapsibleState.None,{
+    command: "watchdocs.exportDependencies",
+    title: "Export Dependencies"
+  },"export"));
 
       if (this.searchQuery) {
         actionItems.push(new DependencyItem("Clear Search", "Action", vscode.TreeItemCollapsibleState.None, {
