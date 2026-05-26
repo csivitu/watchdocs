@@ -6,3 +6,4 @@ export * from "./parse-cargo-toml";
 export * from "./parse-pom-xml";
 export * from "./parse-pubspec-yaml";
 export * from "./parse-pyproject-toml";
+export * from "./parse-gemfile";
