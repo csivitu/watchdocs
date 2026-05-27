@@ -24,10 +24,11 @@ export async function regisrtyResolver(dependency: Dependency): Promise<DocResul
     const registry = await loadRegistry(dependency.ecosystem);
     if (!registry) { return null; }
     const docUrl = registry[dependency.name] || null;
-    return {
-        name: dependency.name,
-        version: dependency.version,
-        docUrl: docUrl,
-        source: docUrl ? "registry" : "unknown"
-    };
+  return {
+    name: dependency.name,
+    version: dependency.version,
+    docUrl,
+    source: docUrl ? "registry" : "unknown",
+    type: dependency.type
+};
 }

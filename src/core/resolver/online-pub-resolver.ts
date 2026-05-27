@@ -1,16 +1,16 @@
 import { DocResult, Dependency } from "../../models";
 
-export async function onlinePubResolver(
-    dependency: Dependency
-): Promise<DocResult | null> {
-    const packageName = dependency.name.trim();
+export async function onlinePubResolver(dependency: Dependency): Promise<DocResult | null> {
+
+    const packageName =dependency.name.trim();
 
     if (!packageName) {
         return null;
     }
 
     try {
-        const controller = new AbortController();
+
+        const controller =new AbortController();
 
         const timeout = setTimeout(
             () => controller.abort(),
@@ -40,11 +40,18 @@ export async function onlinePubResolver(
         return {
             name: dependency.name,
             version: resolvedVersion,
-            docUrl: `https://pub.dev/packages/${packageName}`,
+            docUrl:
+                `https://pub.dev/packages/${packageName}`,
             source: "online-registry",
+            type: dependency.type
         };
+
     } catch (err) {
-        console.error("Pub resolver failed:", err);
+
+        console.error(
+            "Pub resolver failed:",
+            err
+        );
 
         return null;
     }

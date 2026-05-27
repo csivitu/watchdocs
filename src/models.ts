@@ -4,6 +4,7 @@ export type Dependency = {
   name: string
   version: string | null
   ecosystem: string
+  type?: "prod" | "dev" | "test";
 }
 
 export type DocResult = {
@@ -11,6 +12,7 @@ export type DocResult = {
   version: string | null
   docUrl: string | null
   source: "registry" | "llm" | "unknown" | "online-registry"
+  type?: "prod" | "dev" | "test";
 }
 
 export interface DocResolver {

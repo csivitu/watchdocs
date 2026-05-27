@@ -1,8 +1,6 @@
 import { DocResult, Dependency } from "../../models";
 
-export async function onlineBundlerResolver(
-    dependency: Dependency
-): Promise<DocResult | null> {
+export async function onlineBundlerResolver(dependency: Dependency): Promise<DocResult | null> {
 
     const packageName = dependency.name.trim();
 
@@ -11,6 +9,7 @@ export async function onlineBundlerResolver(
     }
 
     try {
+
         const controller = new AbortController();
 
         const timeout = setTimeout(
@@ -18,8 +17,7 @@ export async function onlineBundlerResolver(
             5000
         );
 
-        const res = await fetch(
-            `https://rubygems.org/api/v1/gems/${packageName}.json`,
+        const res = await fetch(`https://rubygems.org/api/v1/gems/${packageName}.json`,
             {
                 signal: controller.signal,
             }
@@ -33,10 +31,7 @@ export async function onlineBundlerResolver(
 
         const data = await res.json();
 
-        const resolvedVersion =
-            dependency.version ||
-            data.version ||
-            null;
+        const resolvedVersion = dependency.version || data.version || null;
 
         return {
             name: dependency.name,
@@ -47,10 +42,15 @@ export async function onlineBundlerResolver(
                 data.source_code_uri ||
                 `https://rubygems.org/gems/${packageName}`,
             source: "online-registry",
+            type: dependency.type
         };
 
     } catch (err) {
-        console.error("Bundler resolver failed:", err);
+
+        console.error(
+            "Bundler resolver failed:",
+            err
+        );
 
         return null;
     }
