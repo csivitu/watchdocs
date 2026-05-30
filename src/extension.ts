@@ -58,7 +58,8 @@ export function activate(context: vscode.ExtensionContext) {
         "rust",
         "java",
         "kotlin",
-        "dart"
+        "dart",
+        "ruby"
     ],
     new DocsHoverProvider()
   );

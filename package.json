@@ -19,7 +19,8 @@
     "onLanguage:rust",
     "onLanguage:java",
     "onLanguage:kotlin",
-    "onLanguage:dart"
+    "onLanguage:dart",
+    "onLanguage:ruby"
   ],
   "categories": [
     "Other"

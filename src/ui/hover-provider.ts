@@ -140,6 +140,18 @@ function detectImport(
                 : null;
         }
 
+        // Ruby
+        case "ruby": {
+
+            const match = line.match(
+                /^\s*(?:require|gem)\s+['"]([^'"]+)['"]/
+            );
+
+            return match
+                ? { name: match[1], ecosystem: "bundler" }
+                : null;
+        }
+
         default:
             return null;
     }
@@ -186,7 +198,7 @@ export class DocsHoverProvider implements vscode.HoverProvider {
 
         const hoveredText = document.getText(wordRange);
 
-        if (!detected.name.includes(hoveredText)) {
+        if (!detected.name.toLowerCase().includes(hoveredText.toLowerCase())) {
             return null;
         }
 
