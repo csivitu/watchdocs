@@ -1,8 +1,10 @@
 import { DocResult, Dependency } from "../../models";
 
-//pypi response thoda nested so for ts clarity and keep type expilcit for pip
+// pypi response thoda nested so for ts clarity
+// and keep type explicit for pip
 
-type PyPiProjectUrls = Record<string, string | null | undefined>;
+type PyPiProjectUrls =
+    Record<string, string | null | undefined>;
 
 type PyPiPackageInfo = {
     home_page?: string | null;
@@ -14,16 +16,27 @@ type PyPiResponse = {
 };
 
 export async function onlinePipResolver(dependency: Dependency): Promise<DocResult | null> {
-    const packageName = dependency.name.trim().toLowerCase();
+
+    const packageName =
+        dependency.name
+            .trim()
+            .toLowerCase();
 
     try {
-        const res = await fetch(`https://pypi.org/pypi/${packageName}/json`);
+
+        const res = await fetch(
+            `https://pypi.org/pypi/${packageName}/json`
+        );
+
         if (!res.ok) {
             return null;
         }
 
-        const data = (await res.json()) as PyPiResponse;
+        const data =
+            (await res.json()) as PyPiResponse;
+
         const info = data.info;
+
         const docUrl =
             info?.project_urls?.Documentation ||
             info?.project_urls?.Homepage ||
@@ -35,8 +48,11 @@ export async function onlinePipResolver(dependency: Dependency): Promise<DocResu
             version: dependency.version,
             docUrl,
             source: "online-registry",
+            type: dependency.type
         };
+
     } catch {
+
         return null;
     }
 }

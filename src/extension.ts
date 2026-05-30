@@ -36,7 +36,7 @@ export function activate(context: vscode.ExtensionContext) {
   });
 
   const watcher = vscode.workspace.createFileSystemWatcher(
-    "**/{package.json,requirements.txt,go.mod,Cargo.toml,pom.xml,pyproject.toml}"
+    "**/{package.json,requirements.txt,go.mod,Cargo.toml,pom.xml,pyproject.toml,pubspec.yaml,Gemfile}"
   );
   
   watcher.onDidChange(() => provider.scan());

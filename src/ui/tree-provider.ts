@@ -214,44 +214,98 @@ export class DocsTreeProvider implements vscode.TreeDataProvider<vscode.TreeItem
       }
     }
 
-    const depItems: vscode.TreeItem[] = [];
-    if (this.resolvedResults && this.resolvedResults.length > 0) {
-      let results = this.resolvedResults.filter(r => r.docUrl);
+    const dependencySections: vscode.TreeItem[] = [];
 
-      if (this.searchQuery) {
-        const fuzzyResults = fuzzysort.go(this.searchQuery, results, {
-          key: "name",
-          limit: 50,
-          threshold: -10000
-        });
-        results = fuzzyResults.map(r => r.obj);
+if (
+  this.resolvedResults &&
+  this.resolvedResults.length > 0
+) {
 
-        if (results.length === 0) {
-          const item = new vscode.TreeItem(`No matches for "${this.searchQuery}"`, vscode.TreeItemCollapsibleState.None);
-          depItems.push(item);
-        }
+  let results =this.resolvedResults.filter(r => r.docUrl);
+
+  if (this.searchQuery) {
+
+    const fuzzyResults = fuzzysort.go(
+      this.searchQuery,
+      results,
+      {
+        key: "name",
+        limit: 50,
+        threshold: -10000
       }
+    );
 
-      results.forEach(result => {
-        depItems.push(new DependencyItem(
-          result.name,
-          result.version || "unknown",
-          vscode.TreeItemCollapsibleState.None,
-          {
-            command: "watchdocs.openDoc",
-            title: "Open Docs",
-            arguments: [result.docUrl, result.name, result.version || "unknown"]
-          },
-          "link-external"
-        ));
-      });
-    } else if (this.scannedDeps !== null && this.scannedDeps.length === 0) {
-      depItems.push(new vscode.TreeItem("No dependencies found", vscode.TreeItemCollapsibleState.None));
+    results =fuzzyResults.map(r => r.obj);
+
+    if (results.length === 0) {
+
+      dependencySections.push(new vscode.TreeItem(`No matches for "${this.searchQuery}"`,vscode.TreeItemCollapsibleState.None));
     }
+  }
+
+  const prodItems: vscode.TreeItem[] = [];
+  const devItems: vscode.TreeItem[] = [];
+  const testItems: vscode.TreeItem[] = [];
+
+  results.forEach(result => {
+
+    const item = new DependencyItem(
+      result.name,
+      result.version || "unknown",
+      vscode.TreeItemCollapsibleState.None,
+      {
+        command: "watchdocs.openDoc",
+        title: "Open Docs",
+        arguments: [
+          result.docUrl,
+          result.name,
+          result.version || "unknown"
+        ]
+      },
+      "link-external"
+    );
+
+    if (result.type === "dev") {
+
+      devItems.push(item);
+
+    } else if (result.type === "test") {
+
+      testItems.push(item);
+
+    } else {
+
+      prodItems.push(item);
+    }
+  });
+
+
+  if (prodItems.length > 0) {
+
+    dependencySections.push(new SectionItem("Production",prodItems,"package"));
+  }
+
+  if (devItems.length > 0) {
+
+    dependencySections.push(new SectionItem("Development", devItems,"tools"));
+  }
+
+  if (testItems.length > 0) {
+
+    dependencySections.push(new SectionItem("Test",testItems,"beaker"));
+  }
+
+} else if (
+  this.scannedDeps !== null &&
+  this.scannedDeps.length === 0
+) {
+
+  dependencySections.push(new vscode.TreeItem("No dependencies found",vscode.TreeItemCollapsibleState.None));
+}
 
     return [
       new SectionItem("Actions", actionItems, "zap"),
-      new SectionItem("Dependencies", depItems, "file-code")
+      new SectionItem("Dependencies",dependencySections,"file-code")
     ];
   }
 }

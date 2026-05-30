@@ -1,33 +1,76 @@
 import { Dependency } from "../../models";
 
 export function parsePomXml(content: string): Dependency[] {
-  if (!content.trim()) {return [];}
+
+  if (!content.trim()) {
+    return [];
+  }
 
   const deps: Dependency[] = [];
-  // simple regex to find dependency blocks without needing a full XML parser module
-  const dependencyRegex = /<dependency>([\s\S]*?)<\/dependency>/gi;
-  const groupIdRegex = /<groupId>\s*(.*?)\s*<\/groupId>/i;
-  const artifactIdRegex = /<artifactId>\s*(.*?)\s*<\/artifactId>/i;
-  const versionRegex = /<version>\s*(.*?)\s*<\/version>/i;
+
+
+  const dependencyRegex =/<dependency>([\s\S]*?)<\/dependency>/gi;
+
+  const groupIdRegex =/<groupId>\s*(.*?)\s*<\/groupId>/i;
+
+  const artifactIdRegex =/<artifactId>\s*(.*?)\s*<\/artifactId>/i;
+
+  const versionRegex =/<version>\s*(.*?)\s*<\/version>/i;
+
+  const scopeRegex =/<scope>\s*(.*?)\s*<\/scope>/i;
 
   let match;
-  while ((match = dependencyRegex.exec(content)) !== null) {
+
+  while (
+    (match = dependencyRegex.exec(content)) !== null
+  ) {
+
     const block = match[1];
-    const groupMatch = block.match(groupIdRegex);
-    const artifactMatch = block.match(artifactIdRegex);
+
+    const groupMatch =block.match(groupIdRegex);
+
+    const artifactMatch =block.match(artifactIdRegex);
+
     if (groupMatch && artifactMatch) {
+
       const groupId = groupMatch[1];
       const artifactId = artifactMatch[1];
-      const name = `${groupId}:${artifactId}`;
-      const versionMatch = block.match(versionRegex);
-      let version: string | null = versionMatch ? versionMatch[1] : null;
-      
-      // ignore internal property placeholder versions like ${spring.version}
-      if (version && version.startsWith("${")) {
-         version = null;
+
+      const name =`${groupId}:${artifactId}`;
+
+      const versionMatch =block.match(versionRegex);
+
+      let version: string | null =versionMatch? versionMatch[1]: null;
+
+      if (version &&version.startsWith("${")) {
+        version = null;
       }
-      
-      deps.push({ name, version, ecosystem: "maven" });
+
+      const scopeMatch =block.match(scopeRegex);
+
+      let type: "prod" | "dev" | "test" =
+      "prod";
+
+      if (scopeMatch) {
+
+        const scope =
+          scopeMatch[1].toLowerCase();
+
+        if (scope === "test") {
+          type = "test";
+        } else if (
+          scope === "provided"
+        ) {
+          type = "dev";
+        }
+      }
+
+      deps.push({
+        name,
+        version,
+        ecosystem: "maven",
+        type
+      });
     }
   }
 

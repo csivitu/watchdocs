@@ -15,21 +15,29 @@ type CratesIoResponse = {
 };
 
 export async function onlineCargoResolver(dependency: Dependency): Promise<DocResult | null> {
-    const packageName = dependency.name.trim().toLowerCase();
+
+    const packageName =
+        dependency.name.trim().toLowerCase();
 
     try {
-        const res = await fetch(`https://crates.io/api/v1/crates/${packageName}`, {
-            headers: {
-                "User-Agent": "doc-resolver/1.0",
-            },
-        });
+
+        const res = await fetch(
+            `https://crates.io/api/v1/crates/${packageName}`,
+            {
+                headers: {
+                    "User-Agent":
+                        "doc-resolver/1.0",
+                },
+            }
+        );
 
         if (!res.ok) {
             return null;
         }
 
-        const data = (await res.json()) as CratesIoResponse;
-        const links = data.crate?.links;
+        const data =(await res.json()) as CratesIoResponse;
+
+        const links =data.crate?.links;
 
         const docUrl =
             links?.documentation ||
@@ -42,8 +50,11 @@ export async function onlineCargoResolver(dependency: Dependency): Promise<DocRe
             version: dependency.version,
             docUrl,
             source: "online-registry",
+            type: dependency.type
         };
+
     } catch {
+
         return null;
     }
 }
