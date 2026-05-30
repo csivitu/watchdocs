@@ -8,14 +8,9 @@ import { onlineMavenResolver } from "../core/resolver/online-maven-resolver";
 import { onlinePubResolver } from "../core/resolver/online-pub-resolver";
 import { onlineBundlerResolver } from "../core/resolver/online-bundler-resolver";
 import { Dependency, DocResult } from "../models";
+import { getCached, addToCache } from "../core/cache/doc-cache";
 
 type Ecosystem = "npm" | "pip" | "go" | "cargo" | "maven" | "pub" | "bundler";
-
-const hoverCache = new Map<string, DocResult | null>();
-
-function cacheKey(ecosystem: string, name: string): string {
-    return `${ecosystem}:${name}`;
-}
 
 async function resolveOnline(dep: Dependency): Promise<DocResult | null> {
     switch (dep.ecosystem) {
@@ -208,33 +203,13 @@ export class DocsHoverProvider implements vscode.HoverProvider {
             ecosystem: detected.ecosystem
         };
 
-        const key = cacheKey(dep.ecosystem, dep.name);
-        let result = hoverCache.get(key);
+        let result = getCached(dep.ecosystem, dep.name);
         if (result === undefined) {
             result = await regisrtyResolver(dep);
             if (!result?.docUrl) {
                 result = await resolveOnline(dep);
             }
-            if (!result?.docUrl && dep.ecosystem === "maven") {
-                const parts = dep.name.split(".");
-                const last = parts[parts.length - 1];
-                if (last && last !== dep.name) {
-                    const alt = { name: last, version: null, ecosystem: "maven" };
-                    const altKey = cacheKey("maven", last);
-                    let altResult = hoverCache.get(altKey);
-                    if (altResult === undefined) {
-                        altResult = await regisrtyResolver(alt);
-                        if (!altResult?.docUrl) {
-                            altResult = await resolveOnline(alt);
-                        }
-                        hoverCache.set(altKey, altResult);
-                    }
-                    if (altResult?.docUrl) {
-                        result = altResult;
-                    }
-                }
-            }
-            hoverCache.set(key, result);
+            addToCache(dep.ecosystem, dep.name, result);
         }
 
         if (!result?.docUrl) {

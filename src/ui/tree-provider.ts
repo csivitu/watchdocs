@@ -6,6 +6,7 @@ import { scanWorkspace } from "../core/scanner/scanner";
 import { exportDependenciesAsMarkdown } from "../core/export/export-markdown";
 import { readFile } from "../core/reader/reader";
 import { parsePackageJson, parseRequirementsTxt, parsePyProjectToml, parseGoMod, parseCargotoml, parsePomXml, parsePubspecYaml, parseGemfile } from "../core/parsers";
+import { setScanResults } from "../core/cache/doc-cache";
 
 export class DocsTreeProvider implements vscode.TreeDataProvider<vscode.TreeItem> {
   private _onDidChangeTreeData = new vscode.EventEmitter<vscode.TreeItem | undefined>();
@@ -15,6 +16,9 @@ export class DocsTreeProvider implements vscode.TreeDataProvider<vscode.TreeItem
   private resolvedResults: DocResult[] | null = null;
   private searchQuery: string = "";
   private _quickPick: vscode.QuickPick<vscode.QuickPickItem> | null = null;
+  private lastManifestFingerprint: string = "";
+  private lastResolvedResults: DocResult[] = [];
+  private lastScannedDeps: Dependency[] = [];
 
   constructor() {}
 
@@ -30,6 +34,23 @@ export class DocsTreeProvider implements vscode.TreeDataProvider<vscode.TreeItem
       this.resolvedResults = [];
       this.refresh();
       vscode.window.showInformationMessage("No manifest files found");
+      return;
+    }
+
+    const snapshotData = await Promise.all(
+      manifests.map(async m => {
+        const stat = await vscode.workspace.fs.stat(m.uri);
+        return { uri: m.uri.toString(), mtime: stat.mtime };
+      })
+    );
+    const fingerprint = JSON.stringify(snapshotData.sort((a, b) => a.uri.localeCompare(b.uri)));
+
+    if (fingerprint === this.lastManifestFingerprint && this.lastResolvedResults.length > 0) {
+      this.scannedDeps = this.lastScannedDeps;
+      this.resolvedResults = this.lastResolvedResults;
+      setScanResults(this.resolvedResults);
+      this.refresh();
+      this._ensureQuickPick();
       return;
     }
 
@@ -71,6 +92,11 @@ export class DocsTreeProvider implements vscode.TreeDataProvider<vscode.TreeItem
     });
 
     statusMessage.dispose();
+
+    setScanResults(this.resolvedResults);
+    this.lastManifestFingerprint = fingerprint;
+    this.lastResolvedResults = this.resolvedResults;
+    this.lastScannedDeps = this.scannedDeps;
 
     this.refresh();
     this._ensureQuickPick();
