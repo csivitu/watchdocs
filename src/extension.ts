@@ -1,5 +1,6 @@
 import * as vscode from "vscode";
 import { DocsTreeProvider } from "./ui/tree-provider";
+import { DocsHoverProvider } from "./ui/hover-provider";
 
 
 export function activate(context: vscode.ExtensionContext) {
@@ -46,7 +47,23 @@ export function activate(context: vscode.ExtensionContext) {
     provider.refresh();
   });
 
-  context.subscriptions.push(scanCommand, searchCommand, clearSearchCommand, helloCommand, refreshCommand, openDocsCommand, watcher);
+  const hoverProvider = vscode.languages.registerHoverProvider(
+    [
+        "javascript",
+        "typescript",
+        "javascriptreact",
+        "typescriptreact",
+        "python",
+        "go",
+        "rust",
+        "java",
+        "kotlin",
+        "dart"
+    ],
+    new DocsHoverProvider()
+  );
+
+  context.subscriptions.push(scanCommand, searchCommand, clearSearchCommand, helloCommand, refreshCommand, openDocsCommand, watcher, hoverProvider);
 }
 
 export function deactivate() { }

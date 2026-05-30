@@ -9,7 +9,17 @@
   },
   "extensionDependencies": ["vscode.simple-browser"],
   "activationEvents": [
-    "onView:watchdocs.sidebar"
+    "onView:watchdocs.sidebar",
+    "onLanguage:javascript",
+    "onLanguage:typescript",
+    "onLanguage:typescriptreact",
+    "onLanguage:javascriptreact",
+    "onLanguage:python",
+    "onLanguage:go",
+    "onLanguage:rust",
+    "onLanguage:java",
+    "onLanguage:kotlin",
+    "onLanguage:dart"
   ],
   "categories": [
     "Other"
