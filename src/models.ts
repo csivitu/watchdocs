@@ -11,6 +11,7 @@ export type DocResult = {
   name: string
   version: string | null
   docUrl: string | null
+  ecosystem: string
   source: "registry" | "llm" | "unknown" | "online-registry"
   type?: "prod" | "dev" | "test";
 }

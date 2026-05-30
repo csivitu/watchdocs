@@ -42,6 +42,7 @@ export async function onlinePubResolver(dependency: Dependency): Promise<DocResu
             version: resolvedVersion,
             docUrl:
                 `https://pub.dev/packages/${packageName}`,
+            ecosystem: dependency.ecosystem,
             source: "online-registry",
             type: dependency.type
         };

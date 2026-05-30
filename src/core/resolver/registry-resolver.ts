@@ -28,6 +28,7 @@ export async function regisrtyResolver(dependency: Dependency): Promise<DocResul
     name: dependency.name,
     version: dependency.version,
     docUrl,
+    ecosystem: dependency.ecosystem,
     source: docUrl ? "registry" : "unknown",
     type: dependency.type
 };

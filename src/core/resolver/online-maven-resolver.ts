@@ -56,6 +56,7 @@ export async function onlineMavenResolver(dependency: Dependency): Promise<DocRe
         doc.latestVersion ??
         null,
       docUrl,
+      ecosystem: dependency.ecosystem,
       source: "online-registry",
       type: dependency.type
     };

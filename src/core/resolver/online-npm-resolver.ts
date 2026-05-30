@@ -25,6 +25,7 @@ export async function onlineNpmResolver(dependency: Dependency): Promise<DocResu
             name: packageName,
             version: dependency.version,
             docUrl,
+            ecosystem: dependency.ecosystem,
             source: "online-registry",
             type: dependency.type
         };

@@ -47,6 +47,7 @@ export async function onlinePipResolver(dependency: Dependency): Promise<DocResu
             name: dependency.name,
             version: dependency.version,
             docUrl,
+            ecosystem: dependency.ecosystem,
             source: "online-registry",
             type: dependency.type
         };

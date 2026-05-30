@@ -41,6 +41,7 @@ export async function onlineGoResolver(dependency: Dependency): Promise<DocResul
             name: dependency.name,
             version: dependency.version,
             docUrl,
+            ecosystem: dependency.ecosystem,
             source: "online-registry",
             type: dependency.type
         };

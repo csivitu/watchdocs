@@ -41,6 +41,7 @@ export async function onlineBundlerResolver(dependency: Dependency): Promise<Doc
                 data.homepage_uri ||
                 data.source_code_uri ||
                 `https://rubygems.org/gems/${packageName}`,
+            ecosystem: dependency.ecosystem,
             source: "online-registry",
             type: dependency.type
         };
