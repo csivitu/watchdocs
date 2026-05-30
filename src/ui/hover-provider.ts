@@ -91,6 +91,8 @@ function detectImport(
 
             const match = line.match(
                 /^\s*import\s+(?:\w+\s+)?["']([^"']+)["']/
+            ) || line.match(
+                /^\s+"([^"]+)"/
             );
 
             return match
@@ -118,9 +120,12 @@ function detectImport(
                 /^\s*import\s+([a-zA-Z0-9_.]+)/
             );
 
-            return match
-                ? { name: match[1], ecosystem: "maven" }
-                : null;
+            if (!match) {return null;}
+            const parts = match[1].split(".");
+            if (parts.length > 1 && /^[A-Z]/.test(parts[parts.length - 1])) {
+                parts.pop();
+            }
+            return { name: parts.join("."), ecosystem: "maven" };
         }
 
         // Dart
@@ -197,6 +202,25 @@ export class DocsHoverProvider implements vscode.HoverProvider {
             result = await regisrtyResolver(dep);
             if (!result?.docUrl) {
                 result = await resolveOnline(dep);
+            }
+            if (!result?.docUrl && dep.ecosystem === "maven") {
+                const parts = dep.name.split(".");
+                const last = parts[parts.length - 1];
+                if (last && last !== dep.name) {
+                    const alt = { name: last, version: null, ecosystem: "maven" };
+                    const altKey = cacheKey("maven", last);
+                    let altResult = hoverCache.get(altKey);
+                    if (altResult === undefined) {
+                        altResult = await regisrtyResolver(alt);
+                        if (!altResult?.docUrl) {
+                            altResult = await resolveOnline(alt);
+                        }
+                        hoverCache.set(altKey, altResult);
+                    }
+                    if (altResult?.docUrl) {
+                        result = altResult;
+                    }
+                }
             }
             hoverCache.set(key, result);
         }
