@@ -346,7 +346,7 @@ class DependencyItem extends vscode.TreeItem {
     private version: string,
     public readonly collapsibleState: vscode.TreeItemCollapsibleState,
     public readonly command?: vscode.Command,
-    private iconName: string = "library"
+    iconName: string = "library"
   ) {
     super(label, collapsibleState);
     this.tooltip = `${this.label}-${this.version}`;

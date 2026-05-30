@@ -1,4 +1,3 @@
-import { Uri, workspace, extensions } from "vscode";
 import { DocResult, Dependency } from "../../models";
 
 export async function onlineNpmResolver(dependency: Dependency): Promise<DocResult | null> {
