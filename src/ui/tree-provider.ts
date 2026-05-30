@@ -72,10 +72,6 @@ export class DocsTreeProvider implements vscode.TreeDataProvider<vscode.TreeItem
 
     statusMessage.dispose();
 
-    if (allDeps.length > 0) {
-      vscode.window.showInformationMessage(`Found ${allDeps.length} dependencies`);
-    }
-    
     this.refresh();
     this._ensureQuickPick();
   }
