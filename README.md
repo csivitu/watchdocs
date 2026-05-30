@@ -15,6 +15,7 @@ WatchDocs is a VS Code extension that streamlines development by automatically s
 - **Multi-Ecosystem** - npm, pip, go, cargo, maven, pub
 - **Interactive Sidebar** - View all dependencies with one-click doc access
 - **Fuzzy Search** - Real-time dependency search with typo tolerance via QuickPick UI
+- **Inline Hover Documentation** - Hover over the package name in import statements to see documentation links instantly
 
 **Who it's for:** Developers working with multiple dependencies, teams referencing docs frequently, anyone reducing time spent searching for documentation.
 
@@ -38,6 +39,7 @@ WatchDocs is a VS Code extension that streamlines development by automatically s
 - **Fuzzy Search** - QuickPick search with instant filtering, typo tolerance, and clear search action
 - **Progressive UI Updates** - Results appear incrementally in batches of 4 as they're resolved
 - **Smart Caching** - 277+ packages in local registry (offline), with online fallback for real-time resolution
+- **Inline Hover Documentation** - Hover over the package name in import statements to instantly see documentation links (supports JavaScript, TypeScript, Python, Go, Rust, Java, Dart, and more)
 
 ---
 
@@ -75,6 +77,13 @@ code --install-extension watchdocs.watchdocs
 2. **Type to filter** - results appear instantly with fuzzy matching and typo tolerance
 3. **Click any result** to open its docs
 4. **Click "Clear search"** or press Escape to reset
+
+### View Documentation While Coding
+
+1. **Hover over the package name** in an import statement in your code (e.g., hover over `react` in `import react from 'react'`)
+2. **A tooltip appears** showing the package name and a link to its documentation
+3. **Click the documentation link** to open it in VS Code's embedded browser
+4. **Works across multiple languages** - JavaScript, TypeScript, Python, Go, Rust, Java, Dart, and more
 
 ### Example
 
