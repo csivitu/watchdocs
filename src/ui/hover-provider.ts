@@ -7,10 +7,8 @@ import { onlineCargoResolver } from "../core/resolver/online-cargo-resolver";
 import { onlineMavenResolver } from "../core/resolver/online-maven-resolver";
 import { onlinePubResolver } from "../core/resolver/online-pub-resolver";
 import { onlineBundlerResolver } from "../core/resolver/online-bundler-resolver";
-import { Dependency, DocResult } from "../models";
+import { Dependency, DocResult, Ecosystem } from "../models";
 import { getCached, addToCache } from "../core/cache/doc-cache";
-
-type Ecosystem = "npm" | "pip" | "go" | "cargo" | "maven" | "pub" | "bundler";
 
 async function resolveOnline(dep: Dependency): Promise<DocResult | null> {
     switch (dep.ecosystem) {

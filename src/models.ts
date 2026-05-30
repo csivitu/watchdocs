@@ -1,9 +1,11 @@
 import { Uri } from 'vscode';
 
+export type Ecosystem = "npm" | "pip" | "go" | "cargo" | "maven" | "pub" | "bundler";
+
 export type Dependency = {
   name: string
   version: string | null
-  ecosystem: string
+  ecosystem: Ecosystem
   type?: "prod" | "dev" | "test";
 }
 
@@ -12,7 +14,7 @@ export type DocResult = {
   version: string | null
   docUrl: string | null
   ecosystem: string
-  source: "registry" | "llm" | "unknown" | "online-registry"
+  source: "registry" | "unknown" | "online-registry"
   type?: "prod" | "dev" | "test";
 }
 
@@ -22,5 +24,5 @@ export interface DocResolver {
 
 export interface ManifestFile {
   uri: Uri
-  type: "pip" | "npm" | "go" | "cargo" | "maven" | "pub" | "bundler" | "nuget" | "unknown"
+  type: "pip" | "npm" | "go" | "cargo" | "maven" | "pub" | "bundler" | "unknown"
 }
