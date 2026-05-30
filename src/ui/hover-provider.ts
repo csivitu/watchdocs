@@ -1,7 +1,34 @@
 import * as vscode from "vscode";
 import { regisrtyResolver } from "../core/resolver/registry-resolver";
+import { onlineNpmResolver } from "../core/resolver/online-npm-resolver";
+import { onlinePipResolver } from "../core/resolver/online-pip-resolver";
+import { onlineGoResolver } from "../core/resolver/online-go-resolver";
+import { onlineCargoResolver } from "../core/resolver/online-cargo-resolver";
+import { onlineMavenResolver } from "../core/resolver/online-maven-resolver";
+import { onlinePubResolver } from "../core/resolver/online-pub-resolver";
+import { onlineBundlerResolver } from "../core/resolver/online-bundler-resolver";
+import { Dependency, DocResult } from "../models";
 
-type Ecosystem = "npm" | "pip" | "go" | "cargo" | "maven" | "pub";
+type Ecosystem = "npm" | "pip" | "go" | "cargo" | "maven" | "pub" | "bundler";
+
+const hoverCache = new Map<string, DocResult | null>();
+
+function cacheKey(ecosystem: string, name: string): string {
+    return `${ecosystem}:${name}`;
+}
+
+async function resolveOnline(dep: Dependency): Promise<DocResult | null> {
+    switch (dep.ecosystem) {
+        case "npm": return onlineNpmResolver(dep);
+        case "pip": return onlinePipResolver(dep);
+        case "go": return onlineGoResolver(dep);
+        case "cargo": return onlineCargoResolver(dep);
+        case "maven": return onlineMavenResolver(dep);
+        case "pub": return onlinePubResolver(dep);
+        case "bundler": return onlineBundlerResolver(dep);
+        default: return null;
+    }
+}
 
 function detectImport(
     line: string,
@@ -158,11 +185,21 @@ export class DocsHoverProvider implements vscode.HoverProvider {
             return null;
         }
 
-        const result = await regisrtyResolver({
+        const dep: Dependency = {
             name: detected.name,
             version: null,
             ecosystem: detected.ecosystem
-        });
+        };
+
+        const key = cacheKey(dep.ecosystem, dep.name);
+        let result = hoverCache.get(key);
+        if (result === undefined) {
+            result = await regisrtyResolver(dep);
+            if (!result?.docUrl) {
+                result = await resolveOnline(dep);
+            }
+            hoverCache.set(key, result);
+        }
 
         if (!result?.docUrl) {
             return null;
