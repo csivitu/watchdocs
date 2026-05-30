@@ -21,15 +21,24 @@ export async function onlineCargoResolver(dependency: Dependency): Promise<DocRe
 
     try {
 
+        const controller = new AbortController();
+        const timeout = setTimeout(
+            () => controller.abort(),
+            5000
+        );
+
         const res = await fetch(
             `https://crates.io/api/v1/crates/${packageName}`,
             {
+                signal: controller.signal,
                 headers: {
                     "User-Agent":
                         "doc-resolver/1.0",
                 },
             }
         );
+
+        clearTimeout(timeout);
 
         if (!res.ok) {
             return null;

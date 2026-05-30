@@ -20,7 +20,7 @@ async function loadRegistry(ecosystem: string) : Promise<Record<string, string> 
     }
 }
 
-export async function regisrtyResolver(dependency: Dependency): Promise<DocResult | null> {
+export async function registryResolver(dependency: Dependency): Promise<DocResult | null> {
     const registry = await loadRegistry(dependency.ecosystem);
     if (!registry) { return null; }
     const docUrl = registry[dependency.name] || null;

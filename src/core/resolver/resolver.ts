@@ -1,5 +1,5 @@
 import { Dependency, DocResult } from "../../models";
-import { regisrtyResolver } from "./registry-resolver";
+import { registryResolver } from "./registry-resolver";
 import { onlineNpmResolver } from "./online-npm-resolver";
 import { onlinePipResolver } from "./online-pip-resolver";
 import { onlineGoResolver } from "./online-go-resolver";
@@ -41,7 +41,7 @@ async function processWithConcurrency<T, R>(
 }
 
 export async function resolver(deps: Dependency[], onProgress?: (results: DocResult[]) => void): Promise<DocResult[]>{
-    const registryResults = await Promise.all(deps.map(regisrtyResolver));
+    const registryResults = await Promise.all(deps.map(registryResolver));
     const found: DocResult[] = [];
     const missingDeps: Dependency[] = [];
     

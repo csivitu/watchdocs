@@ -24,9 +24,18 @@ export async function onlinePipResolver(dependency: Dependency): Promise<DocResu
 
     try {
 
-        const res = await fetch(
-            `https://pypi.org/pypi/${packageName}/json`
+        const controller = new AbortController();
+        const timeout = setTimeout(
+            () => controller.abort(),
+            5000
         );
+
+        const res = await fetch(
+            `https://pypi.org/pypi/${packageName}/json`,
+            { signal: controller.signal }
+        );
+
+        clearTimeout(timeout);
 
         if (!res.ok) {
             return null;

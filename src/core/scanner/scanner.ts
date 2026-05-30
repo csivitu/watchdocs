@@ -5,7 +5,7 @@ import { ManifestFile } from "../../models";
 export async function scanWorkspace(): Promise<ManifestFile[]> {
     var rootFiles = workspace.workspaceFolders;
     if (!rootFiles || rootFiles.length === 0) { return []; }
-    var include = "{**/package.json,**/go.mod,**/requirements.txt,**/pyproject.toml,**/Cargo.toml,**/pom.xml,**/pubspec.yaml,**/Gemfile}";
+    var include = "**/{package.json,go.mod,requirements.txt,pyproject.toml,Cargo.toml,pom.xml,pubspec.yaml,Gemfile}";
     var exclude = "{**/node_modules/**,**/dist/**,**/build/**,**/.git/**}";
     const uris = await workspace.findFiles(include, exclude);
     return uris.map((uri): ManifestFile => {

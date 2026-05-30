@@ -1,5 +1,5 @@
 import * as vscode from "vscode";
-import { regisrtyResolver } from "../core/resolver/registry-resolver";
+import { registryResolver } from "../core/resolver/registry-resolver";
 import { onlineNpmResolver } from "../core/resolver/online-npm-resolver";
 import { onlinePipResolver } from "../core/resolver/online-pip-resolver";
 import { onlineGoResolver } from "../core/resolver/online-go-resolver";
@@ -205,7 +205,7 @@ export class DocsHoverProvider implements vscode.HoverProvider {
 
         let result = getCached(dep.ecosystem, dep.name);
         if (result === undefined) {
-            result = await regisrtyResolver(dep);
+            result = await registryResolver(dep);
             if (!result?.docUrl) {
                 result = await resolveOnline(dep);
             }

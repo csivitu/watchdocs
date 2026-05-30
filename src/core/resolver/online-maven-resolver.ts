@@ -22,6 +22,12 @@ export async function onlineMavenResolver(dependency: Dependency): Promise<DocRe
 
   try {
 
+    const controller = new AbortController();
+    const timeout = setTimeout(
+      () => controller.abort(),
+      5000
+    );
+
     const query =
       `g:"${groupId}" AND a:"${artifactId}"`;
 
@@ -29,7 +35,9 @@ export async function onlineMavenResolver(dependency: Dependency): Promise<DocRe
       `https://search.maven.org/solrsearch/select?q=${encodeURIComponent(query)}` +
       `&rows=1&wt=json`;
 
-    const res = await fetch(url);
+    const res = await fetch(url, { signal: controller.signal });
+
+    clearTimeout(timeout);
 
     if (!res.ok) {
       return null;

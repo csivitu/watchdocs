@@ -7,9 +7,18 @@ export async function onlineNpmResolver(dependency: Dependency): Promise<DocResu
 
     try {
 
-        const res = await fetch(
-            `https://registry.npmjs.org/${packageName}/latest`
+        const controller = new AbortController();
+        const timeout = setTimeout(
+            () => controller.abort(),
+            5000
         );
+
+        const res = await fetch(
+            `https://registry.npmjs.org/${packageName}/latest`,
+            { signal: controller.signal }
+        );
+
+        clearTimeout(timeout);
 
         if (!res.ok) {
             return null;
