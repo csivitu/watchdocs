@@ -1,9 +1,14 @@
 {
   "name": "watchdocs",
-  "displayName": "watchdocs",
+  "displayName": "WatchDocs",
   "publisher": "watchdocs",
-  "description": "auto detect dependencies and show offical docs",
+  "description": "Automatically detect dependencies and open their official documentation",
   "version": "0.4.0",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/csivitu/watchdocs"
+  },
+  "license": "MIT",
   "engines": {
     "vscode": "^1.90.0"
   },
@@ -52,6 +57,14 @@
       {
         "command": "watchdocs.refreshTreeView",
         "title": "Refresh Tree View"
+      },
+      {
+        "command": "watchdocs.exportDependencies",
+        "title": "Export Dependencies"
+      },
+      {
+        "command": "watchdocs.openDoc",
+        "title": "Open Documentation"
       }
     ],
     "viewsContainers": {
