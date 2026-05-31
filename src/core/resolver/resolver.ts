@@ -1,11 +1,12 @@
 import { Dependency, DocResult } from "../../models";
-import { regisrtyResolver } from "./registry-resolver";
+import { registryResolver } from "./registry-resolver";
 import { onlineNpmResolver } from "./online-npm-resolver";
 import { onlinePipResolver } from "./online-pip-resolver";
 import { onlineGoResolver } from "./online-go-resolver";
 import { onlineCargoResolver } from "./online-cargo-resolver";
 import { onlineMavenResolver } from "./online-maven-resolver";
 import { onlinePubResolver } from "./online-pub-resolver";
+import { onlineBundlerResolver } from "./online-bundler-resolver";
 
 async function processWithConcurrency<T, R>(
     items: T[], 
@@ -40,7 +41,7 @@ async function processWithConcurrency<T, R>(
 }
 
 export async function resolver(deps: Dependency[], onProgress?: (results: DocResult[]) => void): Promise<DocResult[]>{
-    const registryResults = await Promise.all(deps.map(regisrtyResolver));
+    const registryResults = await Promise.all(deps.map(registryResolver));
     const found: DocResult[] = [];
     const missingDeps: Dependency[] = [];
     
@@ -61,12 +62,14 @@ export async function resolver(deps: Dependency[], onProgress?: (results: DocRes
     const cargoDeps = missingDeps.filter(d => d.ecosystem === "cargo");
     const mavenDeps = missingDeps.filter(d => d.ecosystem === "maven");
     const pubDeps = missingDeps.filter(d => d.ecosystem === "pub");
+    const bundlerDeps = missingDeps.filter( d => d.ecosystem === "bundler");
     await processWithConcurrency(npmDeps, onlineNpmResolver, (res) => onProgress?.([...res]), found);
     await processWithConcurrency(pipDeps, onlinePipResolver, (res) => onProgress?.([...res]), found);
     await processWithConcurrency(goDeps, onlineGoResolver, (res) => onProgress?.([...res]), found);
     await processWithConcurrency(cargoDeps, onlineCargoResolver, (res) => onProgress?.([...res]), found);
     await processWithConcurrency(mavenDeps, onlineMavenResolver, (res) => onProgress?.([...res]), found);
     await processWithConcurrency(pubDeps, onlinePubResolver, (res) => onProgress?.([...res]), found);
+    await processWithConcurrency(bundlerDeps,onlineBundlerResolver,(res) => onProgress?.([...res]),found);
 
     return found;
 }

@@ -3,8 +3,10 @@ import fuzzysort from "fuzzysort";
 import { Dependency, DocResult } from "../models";
 import { resolver } from "../core/resolver/resolver";
 import { scanWorkspace } from "../core/scanner/scanner";
+import { exportDependenciesAsMarkdown } from "../core/export/export-markdown";
 import { readFile } from "../core/reader/reader";
-import { parsePackageJson, parseRequirementsTxt, parsePyProjectToml, parseGoMod, parseCargotoml, parsePomXml, parsePubspecYaml } from "../core/parsers";
+import { parsePackageJson, parseRequirementsTxt, parsePyProjectToml, parseGoMod, parseCargotoml, parsePomXml, parsePubspecYaml, parseGemfile } from "../core/parsers";
+import { setScanResults } from "../core/cache/doc-cache";
 
 export class DocsTreeProvider implements vscode.TreeDataProvider<vscode.TreeItem> {
   private _onDidChangeTreeData = new vscode.EventEmitter<vscode.TreeItem | undefined>();
@@ -14,6 +16,9 @@ export class DocsTreeProvider implements vscode.TreeDataProvider<vscode.TreeItem
   private resolvedResults: DocResult[] | null = null;
   private searchQuery: string = "";
   private _quickPick: vscode.QuickPick<vscode.QuickPickItem> | null = null;
+  private lastManifestFingerprint: string = "";
+  private lastResolvedResults: DocResult[] = [];
+  private lastScannedDeps: Dependency[] = [];
 
   constructor() {}
 
@@ -29,6 +34,23 @@ export class DocsTreeProvider implements vscode.TreeDataProvider<vscode.TreeItem
       this.resolvedResults = [];
       this.refresh();
       vscode.window.showInformationMessage("No manifest files found");
+      return;
+    }
+
+    const snapshotData = await Promise.all(
+      manifests.map(async m => {
+        const stat = await vscode.workspace.fs.stat(m.uri);
+        return { uri: m.uri.toString(), mtime: stat.mtime };
+      })
+    );
+    const fingerprint = JSON.stringify(snapshotData.sort((a, b) => a.uri.localeCompare(b.uri)));
+
+    if (fingerprint === this.lastManifestFingerprint && this.lastResolvedResults.length > 0) {
+      this.scannedDeps = this.lastScannedDeps;
+      this.resolvedResults = this.lastResolvedResults;
+      setScanResults(this.resolvedResults);
+      this.refresh();
+      this._ensureQuickPick();
       return;
     }
 
@@ -53,6 +75,8 @@ export class DocsTreeProvider implements vscode.TreeDataProvider<vscode.TreeItem
         deps = parsePomXml(content);
       } else if (manifest.type === "pub") {
         deps = parsePubspecYaml(content);
+      }else if (manifest.type === "bundler") {
+        deps = parseGemfile(content);
       }
 
       allDeps.push(...deps);
@@ -69,10 +93,11 @@ export class DocsTreeProvider implements vscode.TreeDataProvider<vscode.TreeItem
 
     statusMessage.dispose();
 
-    if (allDeps.length > 0) {
-      vscode.window.showInformationMessage(`Found ${allDeps.length} dependencies`);
-    }
-    
+    setScanResults(this.resolvedResults);
+    this.lastManifestFingerprint = fingerprint;
+    this.lastResolvedResults = this.resolvedResults;
+    this.lastScannedDeps = this.scannedDeps;
+
     this.refresh();
     this._ensureQuickPick();
   }
@@ -91,6 +116,7 @@ export class DocsTreeProvider implements vscode.TreeDataProvider<vscode.TreeItem
     this._quickPick!.items = [];
     this._quickPick!.show();
   }
+
 
   private _ensureQuickPick(): void {
     if (this._quickPick) {
@@ -160,6 +186,21 @@ export class DocsTreeProvider implements vscode.TreeDataProvider<vscode.TreeItem
     this.refresh();
   }
 
+  async exportDependencies(): Promise<void> {
+
+  if (!this.resolvedResults || this.resolvedResults.length === 0) {
+    vscode.window.showInformationMessage("No dependencies to export");
+    return;
+  }
+
+  const dependencies = this.resolvedResults.filter(dep => dep.docUrl).map(dep => ({
+      name: dep.name,
+      link: dep.docUrl!
+    }));
+
+  await exportDependenciesAsMarkdown(dependencies);
+  }
+
   getTreeItem(element: vscode.TreeItem): vscode.TreeItem {
     return element;
   }
@@ -175,11 +216,17 @@ export class DocsTreeProvider implements vscode.TreeDataProvider<vscode.TreeItem
       title: "Scan Dependencies"
     }, "play"));
 
-    if (this.resolvedResults && this.resolvedResults.length > 0) {
-      actionItems.push(new DependencyItem("Search Dependencies", "Action", vscode.TreeItemCollapsibleState.None, {
-        command: "watchdocs.search",
-        title: "Search Dependencies"
-      }, "search"));
+   if (this.resolvedResults && this.resolvedResults.length > 0) {
+
+  actionItems.push(new DependencyItem("Search Dependencies", "Action", vscode.TreeItemCollapsibleState.None, {
+    command: "watchdocs.search",
+    title: "Search Dependencies"
+  }, "search"));
+
+  actionItems.push(new DependencyItem("Export Dependencies (.md)","Action",vscode.TreeItemCollapsibleState.None,{
+    command: "watchdocs.exportDependencies",
+    title: "Export Dependencies"
+  },"export"));
 
       if (this.searchQuery) {
         actionItems.push(new DependencyItem("Clear Search", "Action", vscode.TreeItemCollapsibleState.None, {
@@ -189,44 +236,98 @@ export class DocsTreeProvider implements vscode.TreeDataProvider<vscode.TreeItem
       }
     }
 
-    const depItems: vscode.TreeItem[] = [];
-    if (this.resolvedResults && this.resolvedResults.length > 0) {
-      let results = this.resolvedResults.filter(r => r.docUrl);
+    const dependencySections: vscode.TreeItem[] = [];
 
-      if (this.searchQuery) {
-        const fuzzyResults = fuzzysort.go(this.searchQuery, results, {
-          key: "name",
-          limit: 50,
-          threshold: -10000
-        });
-        results = fuzzyResults.map(r => r.obj);
+if (
+  this.resolvedResults &&
+  this.resolvedResults.length > 0
+) {
 
-        if (results.length === 0) {
-          const item = new vscode.TreeItem(`No matches for "${this.searchQuery}"`, vscode.TreeItemCollapsibleState.None);
-          depItems.push(item);
-        }
+  let results =this.resolvedResults.filter(r => r.docUrl);
+
+  if (this.searchQuery) {
+
+    const fuzzyResults = fuzzysort.go(
+      this.searchQuery,
+      results,
+      {
+        key: "name",
+        limit: 50,
+        threshold: -10000
       }
+    );
 
-      results.forEach(result => {
-        depItems.push(new DependencyItem(
-          result.name,
-          result.version || "unknown",
-          vscode.TreeItemCollapsibleState.None,
-          {
-            command: "watchdocs.openDoc",
-            title: "Open Docs",
-            arguments: [result.docUrl, result.name, result.version || "unknown"]
-          },
-          "link-external"
-        ));
-      });
-    } else if (this.scannedDeps !== null && this.scannedDeps.length === 0) {
-      depItems.push(new vscode.TreeItem("No dependencies found", vscode.TreeItemCollapsibleState.None));
+    results =fuzzyResults.map(r => r.obj);
+
+    if (results.length === 0) {
+
+      dependencySections.push(new vscode.TreeItem(`No matches for "${this.searchQuery}"`,vscode.TreeItemCollapsibleState.None));
     }
+  }
+
+  const prodItems: vscode.TreeItem[] = [];
+  const devItems: vscode.TreeItem[] = [];
+  const testItems: vscode.TreeItem[] = [];
+
+  results.forEach(result => {
+
+    const item = new DependencyItem(
+      result.name,
+      result.version || "unknown",
+      vscode.TreeItemCollapsibleState.None,
+      {
+        command: "watchdocs.openDoc",
+        title: "Open Docs",
+        arguments: [
+          result.docUrl,
+          result.name,
+          result.version || "unknown"
+        ]
+      },
+      "link-external"
+    );
+
+    if (result.type === "dev") {
+
+      devItems.push(item);
+
+    } else if (result.type === "test") {
+
+      testItems.push(item);
+
+    } else {
+
+      prodItems.push(item);
+    }
+  });
+
+
+  if (prodItems.length > 0) {
+
+    dependencySections.push(new SectionItem("Production",prodItems,"package"));
+  }
+
+  if (devItems.length > 0) {
+
+    dependencySections.push(new SectionItem("Development", devItems,"tools"));
+  }
+
+  if (testItems.length > 0) {
+
+    dependencySections.push(new SectionItem("Test",testItems,"beaker"));
+  }
+
+} else if (
+  this.scannedDeps !== null &&
+  this.scannedDeps.length === 0
+) {
+
+  dependencySections.push(new vscode.TreeItem("No dependencies found",vscode.TreeItemCollapsibleState.None));
+}
 
     return [
       new SectionItem("Actions", actionItems, "zap"),
-      new SectionItem("Dependencies", depItems, "file-code")
+      new SectionItem("Dependencies",dependencySections,"file-code")
     ];
   }
 }
@@ -245,7 +346,7 @@ class DependencyItem extends vscode.TreeItem {
     private version: string,
     public readonly collapsibleState: vscode.TreeItemCollapsibleState,
     public readonly command?: vscode.Command,
-    private iconName: string = "library"
+    iconName: string = "library"
   ) {
     super(label, collapsibleState);
     this.tooltip = `${this.label}-${this.version}`;

@@ -3,35 +3,55 @@ import { Dependency, DocResult } from "../../models";
 type MavenSearchResponse = {
   response?: {
     docs?: Array<{
-      g: string
-      a: string
-      latestVersion?: string
-      homepage?: string
-    }>
+      g: string;
+      a: string;
+      latestVersion?: string;
+      homepage?: string;
+    }>;
+  };
+};
+
+export async function onlineMavenResolver(dependency: Dependency): Promise<DocResult | null> {
+
+  const [groupId, artifactId] =
+    dependency.name.split(":");
+
+  if (!groupId || !artifactId) {
+    return null;
   }
-}
-
-export async function onlineMavenResolver(
-  dependency: Dependency
-): Promise<DocResult | null> {
-  const [groupId, artifactId] = dependency.name.split(":");
-
-  if (!groupId || !artifactId) {return null;}
 
   try {
-    const query = `g:"${groupId}" AND a:"${artifactId}"`;
+
+    const controller = new AbortController();
+    const timeout = setTimeout(
+      () => controller.abort(),
+      5000
+    );
+
+    const query =
+      `g:"${groupId}" AND a:"${artifactId}"`;
 
     const url =
       `https://search.maven.org/solrsearch/select?q=${encodeURIComponent(query)}` +
       `&rows=1&wt=json`;
 
-    const res = await fetch(url);
-    if (!res.ok) {return null;}
+    const res = await fetch(url, { signal: controller.signal });
 
-    const data = (await res.json()) as MavenSearchResponse;
-    const doc = data?.response?.docs?.[0];
+    clearTimeout(timeout);
 
-    if (!doc) {return null;}
+    if (!res.ok) {
+      return null;
+    }
+
+    const data =
+      (await res.json()) as MavenSearchResponse;
+
+    const doc =
+      data?.response?.docs?.[0];
+
+    if (!doc) {
+      return null;
+    }
 
     const docUrl =
       doc.homepage ||
@@ -39,11 +59,18 @@ export async function onlineMavenResolver(
 
     return {
       name: dependency.name,
-      version: dependency.version ?? doc.latestVersion ?? null,
+      version:
+        dependency.version ??
+        doc.latestVersion ??
+        null,
       docUrl,
-      source: "online-registry"
+      ecosystem: dependency.ecosystem,
+      source: "online-registry",
+      type: dependency.type
     };
+
   } catch {
+
     return null;
   }
 }

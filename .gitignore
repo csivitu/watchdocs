@@ -7,3 +7,4 @@ watchdocs-prd.md
 .ds_store
 .DS_Store
 desktop.ini
+*.vsix

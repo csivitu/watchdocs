@@ -1,92 +1,80 @@
 # WatchDocs
 
-> Auto-detect project dependencies and jump directly to their official documentation
+![version](https://img.shields.io/badge/version-0.4.0-blue)
+
+> Auto-detect project dependencies across 7 ecosystems and open their official documentation — from sidebar, search, or inline hover.
+
+WatchDocs is a VS Code extension that eliminates the friction of hunting down documentation. It scans your workspace for dependency manifest files, resolves every package to its official documentation URL, and gives you instant access through a sidebar, a fuzzy search, or an inline hover on import statements.
 
 ---
 
-## Overview
+## Ecosystem Support
 
-WatchDocs is a VS Code extension that streamlines development by automatically scanning your workspace for dependency manifest files, extracting packages, and providing instant clickable links to their official documentation.
-
-**Features:**
-- **Auto Dependency Detection** - Scans for `package.json`, `Cargo.toml`, `go.mod`, `requirements.txt`, `pyproject.toml`, `pom.xml`, `pubspec.yaml`
-- **Two-Tier Resolution** - Local registry cache (277+ packages) → Online registries for maximum coverage
-- **High-Performance** - 16-concurrency worker pool with incremental UI updates (batches of 4)
-- **Multi-Ecosystem** - npm, pip, go, cargo, maven, pub
-- **Interactive Sidebar** - View all dependencies with one-click doc access
-- **Fuzzy Search** - Real-time dependency search with typo tolerance via QuickPick UI
-
-**Who it's for:** Developers working with multiple dependencies, teams referencing docs frequently, anyone reducing time spent searching for documentation.
+| Ecosystem | Manifest Files | Languages |
+|-----------|---------------|-----------|
+| npm | `package.json` | JavaScript, TypeScript, JSX, TSX |
+| pip | `requirements.txt`, `pyproject.toml` | Python |
+| go | `go.mod` | Go |
+| cargo | `Cargo.toml` | Rust |
+| maven | `pom.xml` | Java, Kotlin |
+| pub | `pubspec.yaml` | Dart |
+| bundler | `Gemfile` | Ruby |
 
 ---
 
-## Preview
+## Quick Start
 
-![WatchDocs Demo](resources/demo.webp)
-
-*Sidebar showing detected dependencies with clickable documentation links*
+1. Install WatchDocs from the VS Code Marketplace
+2. Open any project with dependencies (a `package.json`, `requirements.txt`, `go.mod`, etc.)
+3. Click the WatchDocs icon in the Activity Bar and press "Scan Dependencies"
+4. Results appear incrementally as they are resolved
 
 ---
 
 ## Features
 
-- **Auto Dependency Detection** - Scans workspace for manifest files (`package.json`, `requirements.txt`, `pyproject.toml`, `go.mod`, `Cargo.toml`, `pom.xml`, `pubspec.yaml`)
-- **Two-Tier Resolution Engine** - Local registry cache → Online registries for maximum coverage
-- **High-Performance Worker Pool** - 16-concurrency worker pool for rapid dependency resolution
-- **Multi-Ecosystem Support** - npm, pip, go, cargo, maven, pub
-- **Interactive Sidebar** - View all dependencies in one place with one-click doc access
-- **Fuzzy Search** - QuickPick search with instant filtering, typo tolerance, and clear search action
-- **Progressive UI Updates** - Results appear incrementally in batches of 4 as they're resolved
-- **Smart Caching** - 277+ packages in local registry (offline), with online fallback for real-time resolution
+### Dependency Scanning
+WatchDocs automatically detects all manifest files in your workspace, including deeply nested monorepo directories. It skips `node_modules`, `dist`, `build`, and `.git` folders by default. When any manifest file is created, changed, or deleted, the sidebar refreshes automatically through a file system watcher — no manual re-scan needed.
 
----
+### Documentation Resolution
+Resolution follows a two-tier pipeline for speed and coverage:
 
-## Installation
+1. **Local registry** — 280+ pre-mapped packages across 7 JSON files, resolved instantly with no network call. This covers popular packages like `react`, `express`, `django`, `flask`, `serde`, `spring-boot`, and more.
+2. **Online registry** — If a package is not in the local registry, WatchDocs fetches it from the official registry (npmjs.org, PyPI, RubyGems.org, crates.io, Maven Central, pub.dev, or proxy.golang.org). A 16-concurrency worker pool resolves up to 16 packages in parallel with a 5000ms timeout per request.
 
-### From VS Code Marketplace
+Results are cached in a shared in-memory store. If manifest files have not changed since the last scan, the resolver is skipped entirely, reusing cached results for zero-wait refresh.
 
-1. Open VS Code
-2. Press `Ctrl+Shift+X` (or `Cmd+Shift+X` on Mac) to open Extensions view
-3. Search for "WatchDocs"
-4. Click **Install**
-5. The WatchDocs icon will appear in the Activity Bar
+### Sidebar & Tree View
+The WatchDocs sidebar in the Activity Bar shows all resolved dependencies grouped into three sections:
 
-### From CLI
+- **Production** — runtime dependencies (`dependencies` in package.json, top-level gems, etc.)
+- **Development** — dev tooling (`devDependencies`, linters, formatters)
+- **Test** — testing frameworks and coverage tools
 
-```bash
-code --install-extension watchdocs.watchdocs
-```
+Each entry shows the package name and version, with an icon to open the documentation in VS Code's built-in Simple Browser. External URLs fall back to your default browser automatically.
 
----
+### Fuzzy Search
+Press "Search Dependencies" in the sidebar or type a query to filter your dependency list in real time. The search uses `fuzzysort` with typo tolerance — partial matches and misspellings still return results. The QuickPick interface pre-warms on first use for instant response.
 
-## Usage
+### Export to Markdown
+Click "Export Dependencies" to save your entire dependency list as a `dependencies.md` file. Each entry is a clickable Markdown link ready for sharing with your team or adding to project documentation.
 
-### Basic Usage
+### Inline Hover Documentation
+Hover over any import, require, or gem statement in your code to see a tooltip with the package name and a link to its official documentation. Click the link to open it immediately.
 
-1. **Open your project** in VS Code
-2. **Click the WatchDocs icon** in the Activity Bar (left sidebar)
-3. **Click "Scan Dependencies"** (play button) in the sidebar
-4. **Wait for resolution** - dependencies will appear as they're found
-5. **Click any dependency** to open its official documentation in VS Code's embedded browser
+Supports 8 languages:
 
-### Search Dependencies
+| Language | Statement Pattern |
+|----------|------------------|
+| JavaScript / TypeScript | `import ... from 'pkg'`, `require('pkg')` |
+| Python | `import pkg`, `from pkg import ...` |
+| Go | `import "pkg"` (single-line and grouped blocks) |
+| Rust | `use pkg::...` |
+| Java / Kotlin | `import com.package.Class` |
+| Dart | `import 'package:pkg/...'` |
+| Ruby | `require 'pkg'`, `gem 'pkg'` |
 
-1. **Click "Search Dependencies"** in sidebar or run `Search Dependencies` from Command Palette
-2. **Type to filter** - results appear instantly with fuzzy matching and typo tolerance
-3. **Click any result** to open its docs
-4. **Click "Clear search"** or press Escape to reset
-
-### Example
-
-Workspace with `package.json` (react, next, express) and `requirements.txt` (django, requests):
-
-```
-Sidebar displays:
-├── react 18.2.0 → https://react.dev/
-├── next 14.1.0 → https://nextjs.org/docs
-├── django 4.2.0 → https://docs.djangoproject.com/
-└── requests 2.31.0 → https://requests.readthedocs.io/
-```
+The hover resolution uses the same shared cache as the sidebar scan. Once you have scanned your project, hovering over any recognized import is instant — no network call needed.
 
 ---
 
@@ -95,190 +83,91 @@ Sidebar displays:
 | Command | Description |
 |---------|-------------|
 | `watchdocs.scan` | Scan workspace for dependencies and resolve documentation URLs |
-| `watchdocs.search` | Open fuzzy search QuickPick for dependencies |
-| `watchdocs.refreshTreeView` | Refresh the dependency tree view |
-| `watchdocs.helloWorld` | Show "Hello from WatchDocs!" message (debug) |
+| `watchdocs.search` | Open fuzzy search QuickPick |
+| `watchdocs.exportDependencies` | Export dependency list as a Markdown file |
+| `watchdocs.clearSearch` | Clear the search filter and show all dependencies |
+| `watchdocs.refreshTreeView` | Refresh the sidebar view |
+| `watchdocs.helloWorld` | Show a hello message (for debugging) |
 
-Access commands via Command Palette (`Ctrl+Shift+P` / `Cmd+Shift+P`)
-
----
-
-## Keybindings
-
-No default keyboard shortcuts. You can add custom keybindings in `keybindings.json`:
-
-```json
-[
-  {
-    "key": "ctrl+shift+d",
-    "command": "watchdocs.scan",
-    "when": "editorTextFocus"
-  }
-]
-```
+All commands are accessible via the Command Palette (`Ctrl+Shift+P`).
 
 ---
 
 ## How It Works
 
-WatchDocs uses a **two-tier hybrid resolution strategy**:
-1. **Local Registry Cache** (fastest, offline-capable) - Pre-populated JSON registries (277+ packages across 6 ecosystems)
-2. **Online Registries** (fast, requires internet) - Fetches from npmjs.org, PyPI, pkg.go.dev, crates.io, Maven Central, and pub.dev using 16-concurrency worker pool
+```
+1. Scanner
+   workspace.findFiles() discovers manifest files, excludes vendor/generated dirs
 
-**Execution Flow:** User clicks "Scan Dependencies" → Scanner finds manifest files → Parsers extract dependencies → Resolver looks up docs (local cache → online) → Results displayed incrementally in sidebar.
+2. Parser
+   Each manifest type has a dedicated parser that extracts package name,
+   version, and classification (prod/dev/test)
+
+3. Resolver
+   + Local registry lookup (instant, 280+ pre-mapped)
+   + Miss? 16-concurrency online fetch (npmjs, PyPI, crates.io, etc.)
+     Each request has a 5000ms timeout
+   + Results cached in shared doc-cache (in-memory)
+
+4. UI
+   + Sidebar: TreeView with Prod/Dev/Test sections, incremental updates
+   + Search: fuzzysort with typo tolerance, pre-warmed QuickPick
+   + Hover: Shared cache gives instant resolution for scanned packages
+   + Export: Markdown file with clickable links
+
+5. Caching
+   Shared doc-cache populated by scan, consumed by hover. Mtime-based
+   fingerprint detects file changes — no redundant network calls.
+```
+
+---
+
+## Install
+
+From VS Code Marketplace, search "WatchDocs" and click Install.
+
+Or install via CLI:
+
+```bash
+code --install-extension watchdocs.watchdocs
+```
 
 ---
 
 ## Architecture
 
-### Project Structure
-
-```
-watchdocs/
-├── src/
-│   ├── extension.ts           # Entry point, command registration
-│   ├── models.ts              # TypeScript interfaces and types
-│   ├── ui/
-│   │   └── tree-provider.ts   # Sidebar TreeDataProvider implementation
-│   ├── core/
-│   │   ├── scanner/
-│   │   │   └── scanner.ts     # Workspace file discovery
-│   │   ├── reader/
-│   │   │   └── reader.ts      # File content reader
-│   │   ├── parsers/
-│   │   │   ├── index.ts       # Parser exports
-│   │   │   ├── parse-package-json.ts      # npm parser
-│   │   │   ├── parse-requirements.ts      # pip parser
-│   │   │   ├── parse-pyproject-toml.ts    # pip parser (pyproject.toml)
-│   │   │   ├── parse-go-mod.ts            # go parser
-│   │   │   ├── parse-cargo-toml.ts        # cargo parser
-│   │   │   ├── parse-pom-xml.ts           # maven parser
-│   │   │   └── parse-pubspec-yaml.ts      # pub parser
-│   │   ├── resolver/
-│   │   │   ├── resolver.ts    # Main orchestrator (two-tier)
-│   │   │   ├── registry-resolver.ts       # Local registry lookup
-│   │   │   ├── online-npm-resolver.ts     # NPM online resolver
-│   │   │   ├── online-pip-resolver.ts     # PyPI online resolver
-│   │   │   ├── online-go-resolver.ts      # Go online resolver
-│   │   │   ├── online-cargo-resolver.ts   # crates.io online resolver
-│   │   │   ├── online-maven-resolver.ts   # Maven online resolver
-│   │   │   └── online-pub-resolver.ts     # pub.dev online resolver
-│   │   └── cache/
-│   │       └── cache.ts       # In-memory registry cache
-│   └── test/
-│       ├── extension.test.ts  # Extension test suite
-│       ├── parser.test.ts     # Parser unit tests
-│       └── pip-resolver.test.ts # Pip resolver unit tests
-├── resources/
-│   ├── watchdocs-v2.svg       # Extension icon
-│   └── registries/
-│       ├── npm.json           # 85+ npm package URLs
-│       ├── pip.json           # 70+ pip package URLs
-│       ├── go.json            # 18 Go package URLs
-│       ├── cargo.json         # 65+ Rust crate URLs
-│       ├── maven.json         # 3 Java library URLs
-│       └── pub.json           # 17 Dart/Flutter package URLs
-├── dist/                      # Bundled extension output (git-ignored)
-├── out/                       # Test build output (git-ignored)
-├── package.json               # Extension manifest
-├── tsconfig.json              # TypeScript configuration
-└── esbuild.js                 # Build bundler configuration
-```
-
-### Module Responsibilities
-
-| Module | Responsibility |
-|--------|----------------|
-| `extension.ts` | Activation, command registration, lifecycle management |
-| `models.ts` | Type definitions (`Dependency`, `DocResult`, `DocResolver`, `ManifestFile`) |
-| `tree-provider.ts` | Sidebar UI, scan orchestration, tree item rendering |
-| `scanner.ts` | File discovery with glob patterns and exclusions |
-| `reader.ts` | UTF-8 file reading via VS Code FS API |
-| `parsers/` | Ecosystem-specific dependency extraction |
-| `resolver.ts` | Two-tier resolution orchestration with progress callbacks |
-| `registry-resolver.ts` | Fast local JSON registry lookup with caching |
-| `online-*-resolver.ts` | Real-time registry fetchers for npm, pip, go, cargo, maven, pub |
-| `cache.ts` | Session-based in-memory registry caching |
+| Module | Purpose |
+|--------|---------|
+| `scanner.ts` | Workspace file discovery with glob patterns and exclusions |
+| `parsers/` | 8 parser functions (one per manifest type) |
+| `resolver.ts` | Two-tier orchestration, 16-worker pool, progress callbacks |
+| `registry-resolver.ts` | Local JSON registry lookup with caching |
+| `online-*.ts` | 7 online resolvers (npm, pip, go, cargo, maven, pub, bundler) |
+| `doc-cache.ts` | Shared in-memory cache between scan and hover |
+| `tree-provider.ts` | Sidebar TreeDataProvider with categorized sections |
+| `hover-provider.ts` | Inline HoverProvider with import detection |
+| `export-markdown.ts` | Markdown file export |
+| `cache.ts` | Session-level registry file cache |
 
 ---
 
-Report issues on the [GitHub repository](#).
-
----
-
-## Roadmap
-
-### v0.3.1 (Planned)
-- [ ] Visual distinction between dependencies and devDependencies
-- [ ] Automatic rescanning on manifest file changes
-- [ ] Version-specific documentation links
-- [ ] Documentation preview panel (embedded docs)
-
----
-
-## Release Notes
-
-### 0.3.1-alpha (2026-05-24)
-- **Fuzzy Search**: Real-time dependency search with QuickPick UI
-- **Embedded Browser**: Docs open in VS Code's simple browser with external fallback
-- **Search UX**: Clear search action, pre-warmed search for instant response
-
-### 0.3.0-alpha (2026-05-24)
-- Added Rust (`Cargo.toml`), Maven (`pom.xml`), and Dart/Flutter (`pubspec.yaml`) support
-- Removed Gemini AI requirement - works instantly with zero configuration
-- Simplified to two-tier resolution: local registry → online
-
-### 0.2.1-alpha (2026-05-05)
-- 16-concurrency worker pool for faster dependency resolution
-- Go (`go.mod`) and full Pip (`requirements.txt`, `pyproject.toml`) support
-- Incremental UI updates in batches of 4
-
-### 0.2.0-alpha (2026-04-01)
-- Online NPM resolver for packages not in local cache
-- Three-tier resolution: local → online → AI fallback
-
-### 0.1.0-alpha (2026-03-29)
-- Initial release with npm and pip dependency scanning
-- Hybrid resolution (local registry + Gemini AI)
-- Interactive sidebar with clickable documentation links
-
-See [CHANGELOG.md](CHANGELOG.md) for full details.
-
----
-
-## Development Setup
-
-### Prerequisites
-- Node.js 18+ and npm
-- VS Code 1.90.0 or later
-- [Extension Development Host](https://code.visualstudio.com/api/get-started/your-first-extension) (recommended)
-
-### Clone and Install
+## Development
 
 ```bash
-git clone <repo-url>
+git clone https://github.com/csivitu/watchdocs
 cd watchdocs
 npm install
+code .
+# Press F5 to launch the Extension Development Host
 ```
 
-### Build
+Build scripts:
 
-```bash
-# Development build with sourcemaps
-npm run compile
-
-# Watch mode (auto-rebuild on changes)
-npm run watch
-
-# Production build (minified)
-npm run package
-```
-
-### Debug
-
-1. Press `F5` to launch Extension Development Host
-2. A new VS Code window opens with the extension loaded
-3. Set breakpoints in `src/` files for debugging
+| Script | Purpose |
+|--------|---------|
+| `npm run compile` | Full build (type-check + lint + bundle) |
+| `npm run watch` | Watch mode for development |
+| `npm run package` | Production build (minified) |
 
 ---
 
@@ -288,44 +177,19 @@ npm run package
 npm test
 ```
 
-Tests in `src/test/`: `extension.test.ts`, `parser.test.ts`, `pip-resolver.test.ts`. Create new tests matching `*.test.ts` pattern using Mocha assertions.
+Tests use Mocha with `@vscode/test-electron`. Test files live in `src/test/`:
+- `extension.test.ts` — Extension activation smoke test
+- `parser.test.ts` — npm and pip parser unit tests
+- `pip-resolver.test.ts` — PyPI online resolver tests (mocked fetch)
 
 ---
 
-## Contributing
+## Changelog
 
-Contributions welcome! Here's how to help:
-
-- **Add Registry Entries** - Submit PRs adding packages to `resources/registries/*.json`
-- **New Parsers** - Implement parsers for additional manifest formats
-- **Bug Fixes & Features** - Report/fix issues via GitHub
-- **Documentation** - Improve README, add examples, fix typos
-
-**Guidelines:** Follow existing code style (2-space indentation, TypeScript strict mode), add tests for new functionality, use meaningful commit messages.
-
-**Submitting a PR:** Fork → Create feature branch (`git checkout -b feature/add-parser`) → Make changes & test → Commit → Open PR with description.
+See [CHANGELOG.md](./CHANGELOG.md) for the full version history.
 
 ---
 
 ## License
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
-
----
-
-## Acknowledgements
-
-- **[Keep a Changelog](https://keepachangelog.com/)** - Changelog format inspiration
-- **[VS Code Extension API](https://code.visualstudio.com/api)** - Extension framework and documentation
-- **Package Maintainers** - All the open-source projects whose documentation is linked
-
----
-
-## Support
-
-- **Documentation:** This README
-- **Issues:** [GitHub Issues](#)
-
----
-
-**Made with ❤️ for developers by developers@CSI**
+MIT
