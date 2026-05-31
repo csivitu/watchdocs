@@ -4,6 +4,28 @@ All notable changes to the WatchDocs extension will be documented in this file.
 
 This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.4.0] - 2026-05-31
+
+### Added
+- **Shared doc cache** — hover instantly resolves from scan results
+- **Skip-rescan** — no redundant network calls when manifests unchanged
+
+### Changed
+- **Consistent timeouts** — all 7 ecosystem resolvers use 5000ms fetch timeout
+
+---
+
+## [0.3.2-alpha] - 2026-05-30
+
+### Added
+- **Bundler/Gemfile** — full ecosystem support (parser, resolver, registry)
+- **Inline hover** — instant doc links on hover over imports in 8 languages
+- **Export Markdown** — save dependency list as clickable `.md` file
+- **Auto-rescan** — sidebar refreshes on manifest file changes
+- **Prod/Dev/Test** — dependencies categorized into sections in tree view
+
+---
+
 ## [0.3.1-alpha] - 2026-05-24
 
 ### Added

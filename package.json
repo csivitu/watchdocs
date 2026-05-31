@@ -3,7 +3,7 @@
   "displayName": "watchdocs",
   "publisher": "watchdocs",
   "description": "auto detect dependencies and show offical docs",
-  "version": "0.2.1",
+  "version": "0.4.0",
   "engines": {
     "vscode": "^1.90.0"
   },
