@@ -120,20 +120,6 @@ All commands are accessible via the Command Palette (`Ctrl+Shift+P`).
    fingerprint detects file changes — no redundant network calls.
 ```
 
----
-
-## Install
-
-From VS Code Marketplace, search "WatchDocs" and click Install.
-
-Or install via CLI:
-
-```bash
-code --install-extension watchdocs.watchdocs
-```
-
----
-
 ## Architecture
 
 | Module | Purpose |

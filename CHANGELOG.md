@@ -4,7 +4,7 @@ All notable changes to the WatchDocs extension will be documented in this file.
 
 This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [0.4.0] - 2026-05-31
+## [0.3.3] - 2026-05-31
 
 ### Added
 - **Shared doc cache** — hover instantly resolves from scan results
