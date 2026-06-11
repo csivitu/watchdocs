@@ -15,3 +15,8 @@ vsc-extension-quickstart.md
 .husky/**
 .mocharc.json
 package-lock.json
+.DS_Store
+*.vsix
+watchdocs-prd.md
+resources/demo-pics/**
+desktop.ini

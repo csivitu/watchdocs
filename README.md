@@ -6,6 +6,8 @@
 
 WatchDocs is a VS Code extension that eliminates the friction of hunting down documentation. It scans your workspace for dependency manifest files, resolves every package to its official documentation URL, and gives you instant access through a sidebar, a fuzzy search, or an inline hover on import statements.
 
+<img src="resources/demo-pics/demo-0.3.5.webp" width="720" alt="WatchDocs sidebar showing dependencies grouped by language">
+
 ---
 
 ## Ecosystem Support
