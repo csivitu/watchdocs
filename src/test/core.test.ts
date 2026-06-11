@@ -1,4 +1,5 @@
 import * as assert from "assert";
+import { suite, test, teardown } from "mocha";
 import { setScanResults, getCached, addToCache, clearCache } from "../core/cache/doc-cache";
 import { deduplicateDeps } from "../core/dedup";
 import { Dependency, DocResult } from "../models";

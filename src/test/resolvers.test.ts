@@ -1,4 +1,5 @@
 import * as assert from "assert";
+import { suite, test, teardown } from "mocha";
 import { onlineNpmResolver } from "../core/resolver/online-npm-resolver";
 import { onlinePipResolver } from "../core/resolver/online-pip-resolver";
 import { onlineGoResolver } from "../core/resolver/online-go-resolver";
@@ -119,7 +120,7 @@ suite("Online Resolvers", () => {
     const dep: Dependency = { name: "serde", version: "1.0.0", ecosystem: "cargo" };
 
     test("resolves documentation_url from crates.io", async () => {
-      mockResponse(true, { crate: { documentation: "https://serde.rs" } });
+      mockResponse(true, { crate: { links: { documentation: "https://serde.rs" } } });
       const result = await onlineCargoResolver(dep);
       assert.ok(result);
       assert.strictEqual(result?.docUrl, "https://serde.rs");

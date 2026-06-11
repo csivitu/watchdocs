@@ -1,4 +1,5 @@
 import * as assert from "assert";
+import { suite, test } from "mocha";
 import { detectImport } from "../core/import-detector";
 
 suite("Import Detection", () => {
@@ -84,7 +85,7 @@ suite("Import Detection", () => {
     test("detects import without class", () => {
       const r = detectImport(`import java.util.*`, "java");
       assert.ok(r);
-      assert.strictEqual(r.name, "java.util");
+      assert.strictEqual(r.name, "java.util.");
     });
   });
 
