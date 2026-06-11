@@ -1,15 +1,29 @@
-import * as assert from 'assert';
+import * as assert from "assert";
+import * as vscode from "vscode";
+import { readFile } from "../core/reader/reader";
+import { parsePackageJson } from "../core/parsers/parse-package-json";
 
-// You can import and use all API from the 'vscode' module
-// as well as import your extension to test it
-import * as vscode from 'vscode';
-// import * as myExtension from '../../extension';
+suite("Extension", () => {
 
-suite('Extension Test Suite', () => {
-	vscode.window.showInformationMessage('Start all tests.');
+  test("extension is present", () => {
+    const ext = vscode.extensions.getExtension("watchdocs.watchdocs");
+    assert.ok(ext);
+  });
 
-	test('Sample test', () => {
-		assert.strictEqual(-1, [1, 2, 3].indexOf(5));
-		assert.strictEqual(-1, [1, 2, 3].indexOf(0));
-	});
+  test("commands are registered", async () => {
+    const commands = await vscode.commands.getCommands();
+    assert.ok(commands.includes("watchdocs.scan"));
+    assert.ok(commands.includes("watchdocs.search"));
+    assert.ok(commands.includes("watchdocs.exportDependencies"));
+  });
+
+  test("can read and parse a file", async () => {
+    const files = await vscode.workspace.findFiles("package.json", "**/node_modules/**", 1);
+    if (files.length > 0) {
+      const content = await readFile(files[0]);
+      const deps = parsePackageJson(content);
+      assert.ok(Array.isArray(deps));
+    }
+  });
+
 });
