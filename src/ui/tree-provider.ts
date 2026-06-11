@@ -208,10 +208,7 @@ export class DocsTreeProvider implements vscode.TreeDataProvider<vscode.TreeItem
     return;
   }
 
-  const dependencies = this.resolvedResults.filter(dep => dep.docUrl).map(dep => ({
-      name: dep.name,
-      link: dep.docUrl!
-    }));
+  const dependencies = this.resolvedResults.filter(dep => dep.docUrl);
 
   await exportDependenciesAsMarkdown(dependencies);
   }
