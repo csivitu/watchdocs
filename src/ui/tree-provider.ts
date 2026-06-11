@@ -221,8 +221,8 @@ export class DocsTreeProvider implements vscode.TreeDataProvider<vscode.TreeItem
   }
 
   async getChildren(element?: vscode.TreeItem): Promise<vscode.TreeItem[]> {
-    if (element && (element as any).children) {
-      return (element as any).children;
+    if (element instanceof SectionItem) {
+      return element.children;
     }
 
     const actionItems: vscode.TreeItem[] = [];
@@ -335,9 +335,11 @@ if (
 }
 
 class SectionItem extends vscode.TreeItem {
+  public children: vscode.TreeItem[];
+
   constructor(label: string, children: vscode.TreeItem[], iconName: string) {
     super(label, vscode.TreeItemCollapsibleState.Expanded);
-    (this as any).children = children;
+    this.children = children;
     this.iconPath = new vscode.ThemeIcon(iconName);
   }
 }
