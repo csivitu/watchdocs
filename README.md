@@ -1,6 +1,6 @@
 # WatchDocs
 
-![version](https://img.shields.io/badge/version-0.3.4-blue)
+![version](https://img.shields.io/badge/version-0.3.5-blue)
 
 > Auto-detect project dependencies across 7 ecosystems and open their official documentation — from sidebar, search, or inline hover.
 
