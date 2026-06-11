@@ -84,11 +84,22 @@ export class DocsTreeProvider implements vscode.TreeDataProvider<vscode.TreeItem
       allDeps.push(...deps);
     }
 
-    this.scannedDeps = allDeps;
+    const deduped = new Map<string, Dependency>();
+    for (const dep of allDeps) {
+      const key = `${dep.ecosystem}:${dep.name}`;
+      const existing = deduped.get(key);
+      if (!existing) {
+        deduped.set(key, dep);
+      } else if (dep.version && dep.version !== "unknown" && (!existing.version || existing.version === "unknown")) {
+        deduped.set(key, dep);
+      }
+    }
+
+    this.scannedDeps = Array.from(deduped.values());
 
     let statusMessage = vscode.window.setStatusBarMessage("Fetching Documentation...");
 
-    this.resolvedResults = await resolver(allDeps, (partialResults) => {
+    this.resolvedResults = await resolver(this.scannedDeps, (partialResults) => {
       this.resolvedResults = partialResults;
       this.refresh();
     });
