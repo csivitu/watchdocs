@@ -41,6 +41,8 @@ export function parseRequirementsTxt(content: string): Dependency[] {
     let type: "prod" | "dev" | "test" =
       "prod";
 
+    name = name.replace(/\[.*\]/, "");
+
     const lowerName =
       name.toLowerCase();
 

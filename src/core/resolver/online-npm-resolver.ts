@@ -27,7 +27,7 @@ export async function onlineNpmResolver(dependency: Dependency): Promise<DocResu
         const data = await res.json();
 
         const docUrl =
-            data.homepage || null;
+            data.homepage || data.repository?.url || null;
 
         return {
             name: packageName,
