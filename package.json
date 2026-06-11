@@ -3,7 +3,7 @@
   "displayName": "WatchDocs",
   "publisher": "watchdocs",
   "description": "Automatically detect dependencies and open their official documentation",
-  "version": "0.4.0",
+  "version": "0.3.3",
   "repository": {
     "type": "git",
     "url": "https://github.com/csivitu/watchdocs"
@@ -84,7 +84,13 @@
             "icon": "resources/watchdocs-v2.svg"
         }
       ]
-    }
+    },
+    "viewsWelcome": [
+      {
+        "view": "watchdocs.sidebar",
+        "contents": "Extension loading..."
+      }
+    ]
   },
   "scripts": {
     "vscode:prepublish": "npm run package",
