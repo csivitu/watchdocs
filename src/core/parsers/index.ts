@@ -7,3 +7,4 @@ export * from "./parse-pom-xml";
 export * from "./parse-pubspec-yaml";
 export * from "./parse-pyproject-toml";
 export * from "./parse-gemfile";
+export * from "./parse-uv-lock";

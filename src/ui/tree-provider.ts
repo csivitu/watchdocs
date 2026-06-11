@@ -5,7 +5,7 @@ import { resolver } from "../core/resolver/resolver";
 import { scanWorkspace } from "../core/scanner/scanner";
 import { exportDependenciesAsMarkdown } from "../core/export/export-markdown";
 import { readFile } from "../core/reader/reader";
-import { parsePackageJson, parseRequirementsTxt, parsePyProjectToml, parseGoMod, parseCargotoml, parsePomXml, parsePubspecYaml, parseGemfile } from "../core/parsers";
+import { parsePackageJson, parseRequirementsTxt, parsePyProjectToml, parseGoMod, parseCargotoml, parsePomXml, parsePubspecYaml, parseGemfile, parseUvLock } from "../core/parsers";
 import { setScanResults } from "../core/cache/doc-cache";
 
 export class DocsTreeProvider implements vscode.TreeDataProvider<vscode.TreeItem> {
@@ -66,6 +66,8 @@ export class DocsTreeProvider implements vscode.TreeDataProvider<vscode.TreeItem
           deps = parsePyProjectToml(content);
         } else if (manifest.uri.fsPath.endsWith("requirements.txt")){
           deps = parseRequirementsTxt(content);
+        } else if (manifest.uri.fsPath.endsWith("uv.lock")){
+          deps = parseUvLock(content);
         }
       } else if (manifest.type === "go") {
         deps = parseGoMod(content);
