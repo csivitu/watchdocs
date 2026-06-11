@@ -19,23 +19,18 @@ export function parseCargotoml(content: string): Dependency[] {
       continue;
     }
 
-    if (trimmed === "[dependencies]") {
-      currentType = "prod";
-      continue;
-    }
-
-    if (trimmed === "[dev-dependencies]") {
-      currentType = "dev";
-      continue;
-    }
-
-    if (trimmed === "[test-dependencies]") {
-      currentType = "test";
-      continue;
-    }
-
     if (trimmed.startsWith("[")) {
-      currentType = null;
+      if (trimmed.includes("dependencies")) {
+        if (trimmed.match(/dev[-_]dependencies/)) {
+          currentType = "dev";
+        } else if (trimmed.match(/test[-_]dependencies/)) {
+          currentType = "test";
+        } else {
+          currentType = "prod";
+        }
+      } else {
+        currentType = null;
+      }
       continue;
     }
 
@@ -57,8 +52,9 @@ export function parseCargotoml(content: string): Dependency[] {
         const tableMatch = trimmed.match(/^([\w\-.]+)\s*=\s*\{/);
         if (tableMatch) {
           const versionMatch = trimmed.match(/version\s*=\s*"([^"]+)"/);
+          const packageMatch = trimmed.match(/package\s*=\s*"([^"]+)"/);
           deps.push({
-            name: tableMatch[1],
+            name: packageMatch?.[1] ?? tableMatch[1],
             version: versionMatch?.[1] ?? null,
             ecosystem: "cargo",
             type: currentType
