@@ -52,6 +52,18 @@ export function parseCargotoml(content: string): Dependency[] {
           type: currentType
         });
 
+      } else {
+
+        const tableMatch = trimmed.match(/^([\w\-.]+)\s*=\s*\{/);
+        if (tableMatch) {
+          const versionMatch = trimmed.match(/version\s*=\s*"([^"]+)"/);
+          deps.push({
+            name: tableMatch[1],
+            version: versionMatch?.[1] ?? null,
+            ecosystem: "cargo",
+            type: currentType
+          });
+        }
       }
     }
   }
