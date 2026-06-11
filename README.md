@@ -13,7 +13,7 @@ WatchDocs is a VS Code extension that eliminates the friction of hunting down do
 | Ecosystem | Manifest Files | Languages |
 |-----------|---------------|-----------|
 | npm | `package.json` | JavaScript, TypeScript, JSX, TSX |
-| pip | `requirements.txt`, `pyproject.toml` | Python |
+| pip | `requirements.txt`, `pyproject.toml`, `uv.lock` | Python |
 | go | `go.mod` | Go |
 | cargo | `Cargo.toml` | Rust |
 | maven | `pom.xml` | Java, Kotlin |
