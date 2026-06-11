@@ -47,12 +47,7 @@ export async function onlinePubResolver(dependency: Dependency): Promise<DocResu
             type: dependency.type
         };
 
-    } catch (err) {
-
-        console.error(
-            "Pub resolver failed:",
-            err
-        );
+    } catch {
 
         return null;
     }

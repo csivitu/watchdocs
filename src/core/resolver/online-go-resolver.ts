@@ -46,12 +46,7 @@ export async function onlineGoResolver(dependency: Dependency): Promise<DocResul
             type: dependency.type
         };
 
-    } catch (err) {
-
-        console.error(
-            "Go resolver failed:",
-            err
-        );
+    } catch {
 
         return null;
     }
