@@ -9,6 +9,16 @@ import { parsePackageJson, parseRequirementsTxt, parsePyProjectToml, parseGoMod,
 import { setScanResults } from "../core/cache/doc-cache";
 import { deduplicateDeps } from "../core/dedup";
 
+const ECOSYSTEM_LABELS: Record<string, { label: string; icon: string }> = {
+  npm: { label: "JavaScript", icon: "json" },
+  pip: { label: "Python", icon: "python" },
+  go: { label: "Go", icon: "terminal-powershell" },
+  cargo: { label: "Rust", icon: "shield" },
+  maven: { label: "Java", icon: "coffee" },
+  pub: { label: "Dart", icon: "device-mobile" },
+  bundler: { label: "Ruby", icon: "ruby" },
+};
+
 export class DocsTreeProvider implements vscode.TreeDataProvider<vscode.TreeItem> {
   private _onDidChangeTreeData = new vscode.EventEmitter<vscode.TreeItem | undefined>();
   readonly onDidChangeTreeData = this._onDidChangeTreeData.event;
@@ -270,11 +280,14 @@ if (
     }
   }
 
-  const prodItems: vscode.TreeItem[] = [];
-  const devItems: vscode.TreeItem[] = [];
-  const testItems: vscode.TreeItem[] = [];
+  const groups: Record<string, { prod: DependencyItem[]; dev: DependencyItem[]; test: DependencyItem[] }> = {};
+  for (const eco of Object.keys(ECOSYSTEM_LABELS)) {
+    groups[eco] = { prod: [], dev: [], test: [] };
+  }
 
   results.forEach(result => {
+    const eco = result.ecosystem;
+    if (!groups[eco]) { return; }
 
     const item = new DependencyItem(
       result.name,
@@ -283,43 +296,27 @@ if (
       {
         command: "watchdocs.openDoc",
         title: "Open Docs",
-        arguments: [
-          result.docUrl,
-          result.name,
-          result.version || "unknown"
-        ]
+        arguments: [result.docUrl, result.name, result.version || "unknown"]
       },
       "link-external"
     );
 
-    if (result.type === "dev") {
-
-      devItems.push(item);
-
-    } else if (result.type === "test") {
-
-      testItems.push(item);
-
-    } else {
-
-      prodItems.push(item);
-    }
+    if (result.type === "dev") { groups[eco].dev.push(item); }
+    else if (result.type === "test") { groups[eco].test.push(item); }
+    else { groups[eco].prod.push(item); }
   });
 
+  for (const [eco, types] of Object.entries(groups)) {
+    const typeSections: vscode.TreeItem[] = [];
+    if (types.prod.length > 0) { typeSections.push(new SectionItem("Production", types.prod, "package")); }
+    if (types.dev.length > 0) { typeSections.push(new SectionItem("Development", types.dev, "tools")); }
+    if (types.test.length > 0) { typeSections.push(new SectionItem("Test", types.test, "beaker")); }
 
-  if (prodItems.length > 0) {
-
-    dependencySections.push(new SectionItem("Production",prodItems,"package"));
-  }
-
-  if (devItems.length > 0) {
-
-    dependencySections.push(new SectionItem("Development", devItems,"tools"));
-  }
-
-  if (testItems.length > 0) {
-
-    dependencySections.push(new SectionItem("Test",testItems,"beaker"));
+    if (typeSections.length > 0) {
+      const label = ECOSYSTEM_LABELS[eco]?.label ?? eco;
+      const icon = ECOSYSTEM_LABELS[eco]?.icon ?? "file-code";
+      dependencySections.push(new SectionItem(label, typeSections, icon));
+    }
   }
 
 } else if (
