@@ -4,7 +4,7 @@
   "publisher": "watchdocs",
   "description": "Automatically detect dependencies and open their official documentation",
   "type": "commonjs",
-  "version": "0.3.3",
+  "version": "0.3.4",
   "repository": {
     "type": "git",
     "url": "https://github.com/csivitu/watchdocs"

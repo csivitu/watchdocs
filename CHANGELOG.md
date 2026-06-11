@@ -4,6 +4,28 @@ All notable changes to the WatchDocs extension will be documented in this file.
 
 This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.4] - 2026-06-12
+
+### Added
+- **UV lockfile** — `uv.lock` manifest support for Python ecosystem
+- **Language grouping** — tree view groups deps by language (JavaScript, Python, Go, etc.) with codicons
+- **Unit test suite** — 71 tests covering parsers, resolvers, doc-cache, dedup, and import detection
+
+### Changed
+- **Parallel resolution** — all 7 online ecosystem resolvers run simultaneously instead of sequentially
+- **Simpler testing** — replaced VS Code test host with mocha; `npm test` runs in <1s, no download needed
+- **Lower requirement** — VS Code engine floor dropped to 1.56 (from 1.120)
+- **Warm start** — registries preloaded on activation for instant first scan
+
+### Fixed
+- **Duplicate deps** — no more repeated entries when multiple manifests share same ecosystem (e.g. pyproject + uv.lock)
+- **Console noise** — removed stray error logging from Go, Pub, and Bundler resolver catch blocks
+
+### Removed
+- Unused `dotenv` and `ts-node` dependencies
+
+---
+
 ## [0.3.3] - 2026-05-31
 
 ### Added

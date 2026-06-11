@@ -1,6 +1,6 @@
 # WatchDocs
 
-![version](https://img.shields.io/badge/version-0.4.0-blue)
+![version](https://img.shields.io/badge/version-0.3.4-blue)
 
 > Auto-detect project dependencies across 7 ecosystems and open their official documentation — from sidebar, search, or inline hover.
 
@@ -45,11 +45,13 @@ Resolution follows a two-tier pipeline for speed and coverage:
 Results are cached in a shared in-memory store. If manifest files have not changed since the last scan, the resolver is skipped entirely, reusing cached results for zero-wait refresh.
 
 ### Sidebar & Tree View
-The WatchDocs sidebar in the Activity Bar shows all resolved dependencies grouped into three sections:
+The WatchDocs sidebar in the Activity Bar shows resolved dependencies grouped by language ecosystem first, then by type within each language section:
 
 - **Production** — runtime dependencies (`dependencies` in package.json, top-level gems, etc.)
 - **Development** — dev tooling (`devDependencies`, linters, formatters)
 - **Test** — testing frameworks and coverage tools
+
+Each ecosystem section uses a language icon (like `json` for JavaScript, `library` for Python, `ruby` for Ruby).
 
 Each entry shows the package name and version, with an icon to open the documentation in VS Code's built-in Simple Browser. External URLs fall back to your default browser automatically.
 
@@ -110,7 +112,7 @@ All commands are accessible via the Command Palette (`Ctrl+Shift+P`).
    + Results cached in shared doc-cache (in-memory)
 
 4. UI
-   + Sidebar: TreeView with Prod/Dev/Test sections, incremental updates
+   + Sidebar: TreeView with language → Prod/Dev/Test sections, incremental updates
    + Search: fuzzysort with typo tolerance, pre-warmed QuickPick
    + Hover: Shared cache gives instant resolution for scanned packages
    + Export: Markdown file with clickable links
@@ -126,7 +128,9 @@ All commands are accessible via the Command Palette (`Ctrl+Shift+P`).
 |--------|---------|
 | `scanner.ts` | Workspace file discovery with glob patterns and exclusions |
 | `parsers/` | 8 parser functions (one per manifest type) |
-| `resolver.ts` | Two-tier orchestration, 16-worker pool, progress callbacks |
+| `import-detector.ts` | Import statement regex detection for 8 languages |
+| `dedup.ts` | Deduplicate deps by ecosystem:name across multiple manifests |
+| `resolver.ts` | Two-tier orchestration, 16-worker pool, parallel ecosystems |
 | `registry-resolver.ts` | Local JSON registry lookup with caching |
 | `online-*.ts` | 7 online resolvers (npm, pip, go, cargo, maven, pub, bundler) |
 | `doc-cache.ts` | Shared in-memory cache between scan and hover |
