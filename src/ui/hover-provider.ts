@@ -7,8 +7,9 @@ import { onlineCargoResolver } from "../core/resolver/online-cargo-resolver";
 import { onlineMavenResolver } from "../core/resolver/online-maven-resolver";
 import { onlinePubResolver } from "../core/resolver/online-pub-resolver";
 import { onlineBundlerResolver } from "../core/resolver/online-bundler-resolver";
-import { Dependency, DocResult, Ecosystem } from "../models";
+import { Dependency, DocResult } from "../models";
 import { getCached, addToCache } from "../core/cache/doc-cache";
+import { detectImport } from "../core/import-detector";
 
 async function resolveOnline(dep: Dependency): Promise<DocResult | null> {
     switch (dep.ecosystem) {
@@ -20,133 +21,6 @@ async function resolveOnline(dep: Dependency): Promise<DocResult | null> {
         case "pub": return onlinePubResolver(dep);
         case "bundler": return onlineBundlerResolver(dep);
         default: return null;
-    }
-}
-
-function detectImport(
-    line: string,
-    languageId: string
-): { name: string; ecosystem: Ecosystem } | null {
-
-    switch (languageId) {
-
-        // JavaScript / TypeScript
-        case "javascript":
-        case "typescript":
-        case "javascriptreact":
-        case "typescriptreact": {
-
-            const importFrom = line.match(
-                /^\s*import\s+.+?\s+from\s+['"](@?[^'"./][^'"]*)['"]/
-            );
-
-            const sideEffect = line.match(
-                /^\s*import\s+['"](@?[^'"./][^'"]*)['"]/
-            );
-
-            const requireImport = line.match(
-                /require\s*\(\s*['"](@?[^'"./][^'"]*)['"]\s*\)/
-            );
-
-            const pkg =
-                importFrom?.[1] ||
-                sideEffect?.[1] ||
-                requireImport?.[1];
-
-            return pkg
-                ? { name: pkg, ecosystem: "npm" }
-                : null;
-        }
-
-       
-        // Python
-        case "python": {
-
-            const importMatch = line.match(
-                /^\s*import\s+([a-zA-Z0-9_]+)/ 
-            );
-
-            const fromMatch = line.match(
-                /^\s*from\s+([a-zA-Z0-9_]+)\s+import\s+/
-            );
-
-            const pkg =
-                importMatch?.[1] ||
-                fromMatch?.[1];
-
-            return pkg
-                ? { name: pkg, ecosystem: "pip" }
-                : null;
-        }
-
-        // Go
-        case "go": {
-
-            const match = line.match(
-                /^\s*import\s+(?:\w+\s+)?["']([^"']+)["']/
-            ) || line.match(
-                /^\s+"([^"]+)"/
-            );
-
-            return match
-                ? { name: match[1], ecosystem: "go" }
-                : null;
-        }
-
-        // Rust
-        case "rust": {
-
-            const match = line.match(
-                /^\s*use\s+([a-zA-Z0-9_]+)/
-            );
-
-            return match
-                ? { name: match[1], ecosystem: "cargo" }
-                : null;
-        }
-
-        // Java / Kotlin
-        case "java":
-        case "kotlin": {
-
-            const match = line.match(
-                /^\s*import\s+([a-zA-Z0-9_.]+)/
-            );
-
-            if (!match) {return null;}
-            const parts = match[1].split(".");
-            if (parts.length > 1 && /^[A-Z]/.test(parts[parts.length - 1])) {
-                parts.pop();
-            }
-            return { name: parts.join("."), ecosystem: "maven" };
-        }
-
-        // Dart
-        case "dart": {
-
-            const match = line.match(
-                /^\s*import\s+['"]package:([a-zA-Z0-9_]+)/
-            );
-
-            return match
-                ? { name: match[1], ecosystem: "pub" }
-                : null;
-        }
-
-        // Ruby
-        case "ruby": {
-
-            const match = line.match(
-                /^\s*(?:require|gem)\s+['"]([^'"]+)['"]/
-            );
-
-            return match
-                ? { name: match[1], ecosystem: "bundler" }
-                : null;
-        }
-
-        default:
-            return null;
     }
 }
 

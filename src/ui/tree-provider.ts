@@ -7,6 +7,7 @@ import { exportDependenciesAsMarkdown } from "../core/export/export-markdown";
 import { readFile } from "../core/reader/reader";
 import { parsePackageJson, parseRequirementsTxt, parsePyProjectToml, parseGoMod, parseCargotoml, parsePomXml, parsePubspecYaml, parseGemfile, parseUvLock } from "../core/parsers";
 import { setScanResults } from "../core/cache/doc-cache";
+import { deduplicateDeps } from "../core/dedup";
 
 export class DocsTreeProvider implements vscode.TreeDataProvider<vscode.TreeItem> {
   private _onDidChangeTreeData = new vscode.EventEmitter<vscode.TreeItem | undefined>();
@@ -84,18 +85,9 @@ export class DocsTreeProvider implements vscode.TreeDataProvider<vscode.TreeItem
       allDeps.push(...deps);
     }
 
-    const deduped = new Map<string, Dependency>();
-    for (const dep of allDeps) {
-      const key = `${dep.ecosystem}:${dep.name}`;
-      const existing = deduped.get(key);
-      if (!existing) {
-        deduped.set(key, dep);
-      } else if (dep.version && dep.version !== "unknown" && (!existing.version || existing.version === "unknown")) {
-        deduped.set(key, dep);
-      }
-    }
+    const deduped = deduplicateDeps(allDeps);
 
-    this.scannedDeps = Array.from(deduped.values());
+    this.scannedDeps = deduped;
 
     let statusMessage = vscode.window.setStatusBarMessage("Fetching Documentation...");
 
