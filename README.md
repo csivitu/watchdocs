@@ -163,10 +163,14 @@ Build scripts:
 npm test
 ```
 
+First run downloads VS Code (~250 MB) for the test host. Subsequent runs use the cached binary.
+
 Tests use Mocha with `@vscode/test-electron`. Test files live in `src/test/`:
-- `extension.test.ts` — Extension activation smoke test
-- `parser.test.ts` — npm and pip parser unit tests
-- `pip-resolver.test.ts` — PyPI online resolver tests (mocked fetch)
+- `parsers.test.ts` — all 8 manifest parsers (package.json, requirements.txt, pyproject.toml, uv.lock, go.mod, Cargo.toml, pom.xml, pubspec.yaml, Gemfile)
+- `resolvers.test.ts` — all 7 online resolvers with mocked fetch (npm, PyPI, Go, crates.io, Maven Central, pub.dev, RubyGems)
+- `core.test.ts` — doc-cache and dependency deduplication
+- `hover.test.ts` — import statement detection for 8 languages
+- `extension.test.ts` — activation smoke test and integration
 
 ---
 
