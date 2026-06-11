@@ -6,6 +6,9 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## [0.3.5] - 2026-06-12
 
+### Changed
+- **Structured export**: markdown export groups deps by ecosystem and type with branded filename
+
 ### Fixed
 - **Cargo**: support all dependency section variants + inline table syntax + renamed packages + correct API response fields
 - **npm**: fall back to repository URL when homepage is missing
@@ -14,7 +17,7 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ---
 
-## [0.3.4] - 2026-06-12
+## [0.3.4] - 2026-06-11
 
 ### Added
 - **UV lockfile**: `uv.lock` manifest support for Python ecosystem
