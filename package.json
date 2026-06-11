@@ -3,16 +3,19 @@
   "displayName": "WatchDocs",
   "publisher": "watchdocs",
   "description": "Automatically detect dependencies and open their official documentation",
-  "version": "0.4.0",
+  "type": "commonjs",
+  "version": "0.3.5",
   "repository": {
     "type": "git",
     "url": "https://github.com/csivitu/watchdocs"
   },
   "license": "MIT",
   "engines": {
-    "vscode": "^1.120.0"
+    "vscode": "^1.56.0"
   },
-  "extensionDependencies": ["vscode.simple-browser"],
+  "extensionDependencies": [
+    "vscode.simple-browser"
+  ],
   "activationEvents": [
     "onView:watchdocs.sidebar",
     "onLanguage:javascript",
@@ -79,12 +82,18 @@
     "views": {
       "watchdocs": [
         {
-            "id": "watchdocs.sidebar",
-            "name": "Project Docs",
-            "icon": "resources/watchdocs-v2.svg"
+          "id": "watchdocs.sidebar",
+          "name": "Project Docs",
+          "icon": "resources/watchdocs-v2.svg"
         }
       ]
-    }
+    },
+    "viewsWelcome": [
+      {
+        "view": "watchdocs.sidebar",
+        "contents": "Extension loading..."
+      }
+    ]
   },
   "scripts": {
     "vscode:prepublish": "npm run package",
@@ -95,27 +104,24 @@
     "package": "npm run check-types && npm run lint && node esbuild.js --production",
     "compile-tests": "tsc -p . --outDir out",
     "watch-tests": "tsc -p . -w --outDir out",
-    "pretest": "npm run compile-tests && npm run compile && npm run lint",
+    "pretest": "npm run compile-tests && npm run lint",
     "check-types": "tsc --noEmit",
     "lint": "eslint src",
-    "test": "vscode-test"
+    "test": "mocha"
   },
   "devDependencies": {
     "@types/mocha": "^10.0.10",
     "@types/node": "22.x",
-    "@types/vscode": "^1.120.0",
-    "@vscode/test-cli": "^0.0.12",
-    "@vscode/test-electron": "^2.5.2",
+    "@types/vscode": "^1.56.0",
     "esbuild": "^0.27.3",
     "eslint": "^9.39.3",
     "husky": "^9.1.7",
+    "mocha": "^11.7.6",
     "npm-run-all": "^4.1.5",
-    "ts-node": "^10.9.2",
     "typescript": "^5.9.3",
     "typescript-eslint": "^8.56.1"
   },
   "dependencies": {
-    "dotenv": "^17.3.1",
     "fuzzysort": "^3.1.0"
   }
 }

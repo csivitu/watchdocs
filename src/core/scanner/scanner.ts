@@ -3,10 +3,10 @@ import { workspace } from "vscode";
 import { ManifestFile } from "../../models";
 
 export async function scanWorkspace(): Promise<ManifestFile[]> {
-    var rootFiles = workspace.workspaceFolders;
+    const rootFiles = workspace.workspaceFolders;
     if (!rootFiles || rootFiles.length === 0) { return []; }
-    var include = "**/{package.json,go.mod,requirements.txt,pyproject.toml,Cargo.toml,pom.xml,pubspec.yaml,Gemfile}";
-    var exclude = "{**/node_modules/**,**/dist/**,**/build/**,**/.git/**}";
+    const include = "**/{package.json,go.mod,requirements.txt,pyproject.toml,Cargo.toml,pom.xml,pubspec.yaml,Gemfile,uv.lock}";
+    const exclude = "{**/node_modules/**,**/dist/**,**/build/**,**/.git/**}";
     const uris = await workspace.findFiles(include, exclude);
     return uris.map((uri): ManifestFile => {
         const uriPath = uri.fsPath.toLowerCase();
@@ -27,6 +27,8 @@ export async function scanWorkspace(): Promise<ManifestFile[]> {
                 return { uri, type: "pub" };
             case uriPath.endsWith("gemfile"):
                 return { uri, type: "bundler" };
+            case uriPath.endsWith("uv.lock"):
+                return { uri, type: "pip" };
             default:
                 return { uri, type: "unknown" };
         }

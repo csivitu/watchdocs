@@ -1,9 +1,11 @@
 import * as vscode from "vscode";
 import { DocsTreeProvider } from "./ui/tree-provider";
 import { DocsHoverProvider } from "./ui/hover-provider";
+import { preloadRegistries } from "./core/resolver/registry-resolver";
 
 
 export function activate(context: vscode.ExtensionContext) {
+  preloadRegistries();
   const provider = new DocsTreeProvider();
 
   context.subscriptions.push(

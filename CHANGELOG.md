@@ -4,25 +4,57 @@ All notable changes to the WatchDocs extension will be documented in this file.
 
 This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [0.4.0] - 2026-05-31
+## [0.3.5] - 2026-06-12
+
+### Fixed
+- **Cargo**: support all dependency section variants + inline table syntax + renamed packages + correct API response fields
+- **npm**: fall back to repository URL when homepage is missing
+- **pip**: strip extras syntax from names + support PEP 735 [dependency-groups]
+- **Dart**: skip Flutter SDK dependencies
+
+---
+
+## [0.3.4] - 2026-06-12
 
 ### Added
-- **Shared doc cache** — hover instantly resolves from scan results
-- **Skip-rescan** — no redundant network calls when manifests unchanged
+- **UV lockfile**: `uv.lock` manifest support for Python ecosystem
+- **Language grouping**: tree view groups deps by language (JavaScript, Python, Go, etc.) with codicons
+- **Unit test suite**: 71 tests covering parsers, resolvers, doc-cache, dedup, and import detection
 
 ### Changed
-- **Consistent timeouts** — all 7 ecosystem resolvers use 5000ms fetch timeout
+- **Parallel resolution**: all 7 online ecosystem resolvers run simultaneously instead of sequentially
+- **Simpler testing**: replaced VS Code test host with mocha; `npm test` runs in <1s, no download needed
+- **Lower requirement**: VS Code engine floor dropped to 1.56 (from 1.120)
+- **Warm start**: registries preloaded on activation for instant first scan
+
+### Fixed
+- **Duplicate deps**: no more repeated entries when multiple manifests share same ecosystem (e.g. pyproject + uv.lock)
+- **Console noise**: removed stray error logging from Go, Pub, and Bundler resolver catch blocks
+
+### Removed
+- Unused `dotenv` and `ts-node` dependencies
+
+---
+
+## [0.3.3] - 2026-05-31
+
+### Added
+- **Shared doc cache**: hover instantly resolves from scan results
+- **Skip-rescan**: no redundant network calls when manifests unchanged
+
+### Changed
+- **Consistent timeouts**: all 7 ecosystem resolvers use 5000ms fetch timeout
 
 ---
 
 ## [0.3.2-alpha] - 2026-05-30
 
 ### Added
-- **Bundler/Gemfile** — full ecosystem support (parser, resolver, registry)
-- **Inline hover** — instant doc links on hover over imports in 8 languages
-- **Export Markdown** — save dependency list as clickable `.md` file
-- **Auto-rescan** — sidebar refreshes on manifest file changes
-- **Prod/Dev/Test** — dependencies categorized into sections in tree view
+- **Bundler/Gemfile**: full ecosystem support (parser, resolver, registry)
+- **Inline hover**: instant doc links on hover over imports in 8 languages
+- **Export Markdown**: save dependency list as clickable `.md` file
+- **Auto-rescan**: sidebar refreshes on manifest file changes
+- **Prod/Dev/Test**: dependencies categorized into sections in tree view
 
 ---
 

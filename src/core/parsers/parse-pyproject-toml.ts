@@ -129,6 +129,22 @@ export function parsePyProjectToml(content: string): Dependency[] {
         });
       }
     }
+
+    if (section === "dependency-groups") {
+      const groupMatch = line.match(/^(\w+)\s*=\s*\[([^\]]*)\]/);
+      if (groupMatch) {
+        const groupName = groupMatch[1].toLowerCase();
+        const type: "dev" | "test" = groupName.includes("test") ? "test" : "dev";
+        const items = groupMatch[2]
+          .split(",")
+          .map(s => s.trim().replace(/^["']|["']$/g, ""))
+          .filter(Boolean);
+        for (const dep of items) {
+          const [name, version] = split(dep);
+          result.push({ name, version: version || "unknown", ecosystem: "pip", type });
+        }
+      }
+    }
   }
 
   return result;

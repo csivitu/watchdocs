@@ -46,12 +46,7 @@ export async function onlineBundlerResolver(dependency: Dependency): Promise<Doc
             type: dependency.type
         };
 
-    } catch (err) {
-
-        console.error(
-            "Bundler resolver failed:",
-            err
-        );
+    } catch {
 
         return null;
     }

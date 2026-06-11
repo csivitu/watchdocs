@@ -1,10 +1,12 @@
 # WatchDocs
 
-![version](https://img.shields.io/badge/version-0.4.0-blue)
+![version](https://img.shields.io/badge/version-0.3.5-blue)
 
 > Auto-detect project dependencies across 7 ecosystems and open their official documentation — from sidebar, search, or inline hover.
 
 WatchDocs is a VS Code extension that eliminates the friction of hunting down documentation. It scans your workspace for dependency manifest files, resolves every package to its official documentation URL, and gives you instant access through a sidebar, a fuzzy search, or an inline hover on import statements.
+
+<img src="resources/demo-pics/demo-0.3.5.webp" width="720" alt="WatchDocs sidebar showing dependencies grouped by language">
 
 ---
 
@@ -13,7 +15,7 @@ WatchDocs is a VS Code extension that eliminates the friction of hunting down do
 | Ecosystem | Manifest Files | Languages |
 |-----------|---------------|-----------|
 | npm | `package.json` | JavaScript, TypeScript, JSX, TSX |
-| pip | `requirements.txt`, `pyproject.toml` | Python |
+| pip | `requirements.txt`, `pyproject.toml`, `uv.lock` | Python |
 | go | `go.mod` | Go |
 | cargo | `Cargo.toml` | Rust |
 | maven | `pom.xml` | Java, Kotlin |
@@ -45,11 +47,13 @@ Resolution follows a two-tier pipeline for speed and coverage:
 Results are cached in a shared in-memory store. If manifest files have not changed since the last scan, the resolver is skipped entirely, reusing cached results for zero-wait refresh.
 
 ### Sidebar & Tree View
-The WatchDocs sidebar in the Activity Bar shows all resolved dependencies grouped into three sections:
+The WatchDocs sidebar in the Activity Bar shows resolved dependencies grouped by language ecosystem first, then by type within each language section:
 
 - **Production** — runtime dependencies (`dependencies` in package.json, top-level gems, etc.)
 - **Development** — dev tooling (`devDependencies`, linters, formatters)
 - **Test** — testing frameworks and coverage tools
+
+Each ecosystem section uses a language icon (like `json` for JavaScript, `library` for Python, `ruby` for Ruby).
 
 Each entry shows the package name and version, with an icon to open the documentation in VS Code's built-in Simple Browser. External URLs fall back to your default browser automatically.
 
@@ -110,7 +114,7 @@ All commands are accessible via the Command Palette (`Ctrl+Shift+P`).
    + Results cached in shared doc-cache (in-memory)
 
 4. UI
-   + Sidebar: TreeView with Prod/Dev/Test sections, incremental updates
+   + Sidebar: TreeView with language → Prod/Dev/Test sections, incremental updates
    + Search: fuzzysort with typo tolerance, pre-warmed QuickPick
    + Hover: Shared cache gives instant resolution for scanned packages
    + Export: Markdown file with clickable links
@@ -120,27 +124,15 @@ All commands are accessible via the Command Palette (`Ctrl+Shift+P`).
    fingerprint detects file changes — no redundant network calls.
 ```
 
----
-
-## Install
-
-From VS Code Marketplace, search "WatchDocs" and click Install.
-
-Or install via CLI:
-
-```bash
-code --install-extension watchdocs.watchdocs
-```
-
----
-
 ## Architecture
 
 | Module | Purpose |
 |--------|---------|
 | `scanner.ts` | Workspace file discovery with glob patterns and exclusions |
 | `parsers/` | 8 parser functions (one per manifest type) |
-| `resolver.ts` | Two-tier orchestration, 16-worker pool, progress callbacks |
+| `import-detector.ts` | Import statement regex detection for 8 languages |
+| `dedup.ts` | Deduplicate deps by ecosystem:name across multiple manifests |
+| `resolver.ts` | Two-tier orchestration, 16-worker pool, parallel ecosystems |
 | `registry-resolver.ts` | Local JSON registry lookup with caching |
 | `online-*.ts` | 7 online resolvers (npm, pip, go, cargo, maven, pub, bundler) |
 | `doc-cache.ts` | Shared in-memory cache between scan and hover |
@@ -177,10 +169,11 @@ Build scripts:
 npm test
 ```
 
-Tests use Mocha with `@vscode/test-electron`. Test files live in `src/test/`:
-- `extension.test.ts` — Extension activation smoke test
-- `parser.test.ts` — npm and pip parser unit tests
-- `pip-resolver.test.ts` — PyPI online resolver tests (mocked fetch)
+Tests use Mocha. Test files live in `src/test/`:
+- `parsers.test.ts` — all 8 manifest parsers (package.json, requirements.txt, pyproject.toml, uv.lock, go.mod, Cargo.toml, pom.xml, pubspec.yaml, Gemfile)
+- `resolvers.test.ts` — all 7 online resolvers with mocked fetch (npm, PyPI, Go, crates.io, Maven Central, pub.dev, RubyGems)
+- `core.test.ts` — doc-cache and dependency deduplication
+- `hover.test.ts` — import statement detection for 8 languages
 
 ---
 

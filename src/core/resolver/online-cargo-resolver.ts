@@ -1,13 +1,9 @@
 import { DocResult, Dependency } from "../../models";
 
-type CrateLinks = {
+type CrateData = {
     documentation?: string | null;
     homepage?: string | null;
     repository?: string | null;
-};
-
-type CrateData = {
-    links?: CrateLinks | null;
 };
 
 type CratesIoResponse = {
@@ -46,12 +42,12 @@ export async function onlineCargoResolver(dependency: Dependency): Promise<DocRe
 
         const data =(await res.json()) as CratesIoResponse;
 
-        const links =data.crate?.links;
+        const crate = data.crate;
 
         const docUrl =
-            links?.documentation ||
-            links?.homepage ||
-            links?.repository ||
+            crate?.documentation ||
+            crate?.homepage ||
+            crate?.repository ||
             null;
 
         return {

@@ -12,7 +12,8 @@ export function parsePubspecYaml(content: string): Dependency[] {
   let currentType: "prod" | "dev" | "test" | null =
     null;
 
-  for (const line of lines) {
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i];
 
     const trimmed = line.trim();
 
@@ -78,11 +79,16 @@ export function parsePubspecYaml(content: string): Dependency[] {
 
           
           if (
-            name !== "flutter" &&
-            name !== "sdk"
-          ) {
+            name === "flutter" ||
+            name === "sdk"
+          ) { continue; }
 
-            if (
+          if (!version) {
+            const nextLine = (lines[i + 1] || "").trim();
+            if (nextLine.startsWith("sdk:")) { continue; }
+          }
+
+          if (
               !deps.find(
                 d => d.name === name
               )
@@ -98,7 +104,6 @@ export function parsePubspecYaml(content: string): Dependency[] {
             }
           }
         }
-      }
     }
   }
 
