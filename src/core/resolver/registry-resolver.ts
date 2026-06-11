@@ -20,6 +20,11 @@ async function loadRegistry(ecosystem: string) : Promise<Record<string, string> 
     }
 }
 
+export async function preloadRegistries(): Promise<void> {
+  const ecosystems = ["npm", "pip", "go", "cargo", "maven", "pub", "bundler"];
+  await Promise.all(ecosystems.map(loadRegistry));
+}
+
 export async function registryResolver(dependency: Dependency): Promise<DocResult | null> {
     const registry = await loadRegistry(dependency.ecosystem);
     if (!registry) { return null; }

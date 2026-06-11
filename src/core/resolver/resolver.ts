@@ -14,14 +14,13 @@ async function processWithConcurrency<T, R>(
     onBatchComplete: (results: R[]) => void, 
     found: R[]
 ): Promise<T[]> {
-    const queue = [...items];
     const failed: T[] = [];
     let completedCount = 0;
+    let index = 0;
 
     const worker = async () => {
-        while (queue.length > 0) {
-            const item = queue.shift();
-            if (!item) {break;}
+        while (index < items.length) {
+            const item = items[index++];
             const res = await processor(item);
             if (res) {
                 found.push(res);
