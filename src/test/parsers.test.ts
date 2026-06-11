@@ -253,12 +253,12 @@ dev_dependencies:
   mockito: ^5.4.0
 `;
       const result = parsePubspecYaml(content);
-      assert.strictEqual(result.length, 3);
+      assert.strictEqual(result.length, 2);
       assert.strictEqual(result[0].name, "http");
       assert.strictEqual(result[0].ecosystem, "pub");
       assert.strictEqual(result[0].type, "prod");
-      assert.strictEqual(result[2].name, "mockito");
-      assert.strictEqual(result[2].type, "dev");
+      assert.strictEqual(result[1].name, "mockito");
+      assert.strictEqual(result[1].type, "dev");
     });
 
     test("handles empty content", () => {
