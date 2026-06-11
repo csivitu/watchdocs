@@ -63,13 +63,15 @@ export async function resolver(deps: Dependency[], onProgress?: (results: DocRes
     const mavenDeps = missingDeps.filter(d => d.ecosystem === "maven");
     const pubDeps = missingDeps.filter(d => d.ecosystem === "pub");
     const bundlerDeps = missingDeps.filter( d => d.ecosystem === "bundler");
-    await processWithConcurrency(npmDeps, onlineNpmResolver, (res) => onProgress?.([...res]), found);
-    await processWithConcurrency(pipDeps, onlinePipResolver, (res) => onProgress?.([...res]), found);
-    await processWithConcurrency(goDeps, onlineGoResolver, (res) => onProgress?.([...res]), found);
-    await processWithConcurrency(cargoDeps, onlineCargoResolver, (res) => onProgress?.([...res]), found);
-    await processWithConcurrency(mavenDeps, onlineMavenResolver, (res) => onProgress?.([...res]), found);
-    await processWithConcurrency(pubDeps, onlinePubResolver, (res) => onProgress?.([...res]), found);
-    await processWithConcurrency(bundlerDeps,onlineBundlerResolver,(res) => onProgress?.([...res]),found);
+    await Promise.all([
+      processWithConcurrency(npmDeps, onlineNpmResolver, (res) => onProgress?.([...res]), found),
+      processWithConcurrency(pipDeps, onlinePipResolver, (res) => onProgress?.([...res]), found),
+      processWithConcurrency(goDeps, onlineGoResolver, (res) => onProgress?.([...res]), found),
+      processWithConcurrency(cargoDeps, onlineCargoResolver, (res) => onProgress?.([...res]), found),
+      processWithConcurrency(mavenDeps, onlineMavenResolver, (res) => onProgress?.([...res]), found),
+      processWithConcurrency(pubDeps, onlinePubResolver, (res) => onProgress?.([...res]), found),
+      processWithConcurrency(bundlerDeps, onlineBundlerResolver, (res) => onProgress?.([...res]), found),
+    ]);
 
     return found;
 }
