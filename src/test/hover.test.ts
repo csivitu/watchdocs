@@ -130,4 +130,30 @@ suite("Import Detection", () => {
     });
   });
 
+  suite("C#", () => {
+    test("detects using statement", () => {
+      const r = detectImport(`using Newtonsoft.Json;`, "csharp");
+      assert.ok(r);
+      assert.strictEqual(r.name, "Newtonsoft.Json");
+      assert.strictEqual(r.ecosystem, "nuget");
+    });
+
+    test("detects using static", () => {
+      const r = detectImport(`using static System.Math;`, "csharp");
+      assert.ok(r);
+      assert.strictEqual(r.name, "System.Math");
+    });
+
+    test("detects using alias", () => {
+      const r = detectImport(`using Json = Newtonsoft.Json.Linq.JObject;`, "csharp");
+      assert.ok(r);
+      assert.strictEqual(r.name, "Newtonsoft.Json.Linq.JObject");
+    });
+
+    test("returns null for non-using line", () => {
+      const r = detectImport(`Console.WriteLine("hello");`, "csharp");
+      assert.strictEqual(r, null);
+    });
+  });
+
 });
