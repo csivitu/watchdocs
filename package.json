@@ -28,7 +28,8 @@
     "onLanguage:java",
     "onLanguage:kotlin",
     "onLanguage:dart",
-    "onLanguage:ruby"
+    "onLanguage:ruby",
+    "onLanguage:csharp"
   ],
   "categories": [
     "Other"

@@ -5,7 +5,7 @@ import { resolver } from "../core/resolver/resolver";
 import { scanWorkspace } from "../core/scanner/scanner";
 import { exportDependenciesAsMarkdown } from "../core/export/export-markdown";
 import { readFile } from "../core/reader/reader";
-import { parsePackageJson, parseRequirementsTxt, parsePyProjectToml, parseGoMod, parseCargotoml, parsePomXml, parsePubspecYaml, parseGemfile, parseUvLock } from "../core/parsers";
+import { parsePackageJson, parseRequirementsTxt, parsePyProjectToml, parseGoMod, parseCargotoml, parsePomXml, parsePubspecYaml, parseGemfile, parseUvLock, parseCsproj } from "../core/parsers";
 import { setScanResults } from "../core/cache/doc-cache";
 import { deduplicateDeps } from "../core/dedup";
 
@@ -17,6 +17,7 @@ const ECOSYSTEM_LABELS: Record<string, { label: string; icon: string }> = {
   maven: { label: "Java", icon: "coffee" },
   pub: { label: "Dart", icon: "device-mobile" },
   bundler: { label: "Ruby", icon: "ruby" },
+  nuget: { label: "C#", icon: "symbol-method" },
 };
 
 export class DocsTreeProvider implements vscode.TreeDataProvider<vscode.TreeItem> {
@@ -88,8 +89,10 @@ export class DocsTreeProvider implements vscode.TreeDataProvider<vscode.TreeItem
         deps = parsePomXml(content);
       } else if (manifest.type === "pub") {
         deps = parsePubspecYaml(content);
-      }else if (manifest.type === "bundler") {
+      } else if (manifest.type === "bundler") {
         deps = parseGemfile(content);
+      } else if (manifest.type === "nuget") {
+        deps = parseCsproj(content);
       }
 
       allDeps.push(...deps);

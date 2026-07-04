@@ -5,7 +5,7 @@ import { ManifestFile } from "../../models";
 export async function scanWorkspace(): Promise<ManifestFile[]> {
     const rootFiles = workspace.workspaceFolders;
     if (!rootFiles || rootFiles.length === 0) { return []; }
-    const include = "**/{package.json,go.mod,requirements.txt,pyproject.toml,Cargo.toml,pom.xml,pubspec.yaml,Gemfile,uv.lock}";
+    const include = "**/{package.json,go.mod,requirements.txt,pyproject.toml,Cargo.toml,pom.xml,pubspec.yaml,Gemfile,uv.lock,*.csproj}";
     const exclude = "{**/node_modules/**,**/dist/**,**/build/**,**/.git/**}";
     const uris = await workspace.findFiles(include, exclude);
     return uris.map((uri): ManifestFile => {
@@ -29,6 +29,8 @@ export async function scanWorkspace(): Promise<ManifestFile[]> {
                 return { uri, type: "bundler" };
             case uriPath.endsWith("uv.lock"):
                 return { uri, type: "pip" };
+            case uriPath.endsWith(".csproj"):
+                return { uri, type: "nuget" };
             default:
                 return { uri, type: "unknown" };
         }

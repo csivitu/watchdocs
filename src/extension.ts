@@ -39,7 +39,7 @@ export function activate(context: vscode.ExtensionContext) {
   });
 
   const watcher = vscode.workspace.createFileSystemWatcher(
-    "**/{package.json,requirements.txt,go.mod,Cargo.toml,pom.xml,pyproject.toml,pubspec.yaml,Gemfile}"
+    "**/{package.json,requirements.txt,go.mod,Cargo.toml,pom.xml,pyproject.toml,pubspec.yaml,Gemfile,*.csproj}"
   );
   
   watcher.onDidChange(() => provider.scan());
@@ -61,7 +61,8 @@ export function activate(context: vscode.ExtensionContext) {
         "java",
         "kotlin",
         "dart",
-        "ruby"
+        "ruby",
+        "csharp"
     ],
     new DocsHoverProvider()
   );

@@ -7,6 +7,7 @@ import { onlineCargoResolver } from "../core/resolver/online-cargo-resolver";
 import { onlineMavenResolver } from "../core/resolver/online-maven-resolver";
 import { onlinePubResolver } from "../core/resolver/online-pub-resolver";
 import { onlineBundlerResolver } from "../core/resolver/online-bundler-resolver";
+import { onlineNugetResolver } from "../core/resolver/online-nuget-resolver";
 import { Dependency, DocResult } from "../models";
 import { getCached, addToCache } from "../core/cache/doc-cache";
 import { detectImport } from "../core/import-detector";
@@ -20,6 +21,7 @@ async function resolveOnline(dep: Dependency): Promise<DocResult | null> {
         case "maven": return onlineMavenResolver(dep);
         case "pub": return onlinePubResolver(dep);
         case "bundler": return onlineBundlerResolver(dep);
+        case "nuget": return onlineNugetResolver(dep);
         default: return null;
     }
 }
