@@ -114,6 +114,17 @@ export function detectImport(
                 : null;
         }
 
+        case "csharp": {
+
+            const match = line.match(
+                /^\s*using\s+(?:static\s+)?(?:[a-zA-Z0-9_]+\s*=\s*)?([a-zA-Z0-9_.]+)\s*;/
+            );
+
+            return match
+                ? { name: match[1], ecosystem: "nuget" }
+                : null;
+        }
+
         default:
             return null;
     }

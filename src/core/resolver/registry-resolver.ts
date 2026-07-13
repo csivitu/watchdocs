@@ -21,7 +21,7 @@ async function loadRegistry(ecosystem: string) : Promise<Record<string, string> 
 }
 
 export async function preloadRegistries(): Promise<void> {
-  const ecosystems = ["npm", "pip", "go", "cargo", "maven", "pub", "bundler"];
+  const ecosystems = ["npm", "pip", "go", "cargo", "maven", "pub", "bundler", "nuget"];
   await Promise.all(ecosystems.map(loadRegistry));
 }
 

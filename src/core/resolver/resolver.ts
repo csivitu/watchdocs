@@ -7,6 +7,7 @@ import { onlineCargoResolver } from "./online-cargo-resolver";
 import { onlineMavenResolver } from "./online-maven-resolver";
 import { onlinePubResolver } from "./online-pub-resolver";
 import { onlineBundlerResolver } from "./online-bundler-resolver";
+import { onlineNugetResolver } from "./online-nuget-resolver";
 
 async function processWithConcurrency<T, R>(
     items: T[], 
@@ -62,6 +63,7 @@ export async function resolver(deps: Dependency[], onProgress?: (results: DocRes
     const mavenDeps = missingDeps.filter(d => d.ecosystem === "maven");
     const pubDeps = missingDeps.filter(d => d.ecosystem === "pub");
     const bundlerDeps = missingDeps.filter( d => d.ecosystem === "bundler");
+    const nugetDeps = missingDeps.filter(d => d.ecosystem === "nuget");
     await Promise.all([
       processWithConcurrency(npmDeps, onlineNpmResolver, (res) => onProgress?.([...res]), found),
       processWithConcurrency(pipDeps, onlinePipResolver, (res) => onProgress?.([...res]), found),
@@ -70,6 +72,7 @@ export async function resolver(deps: Dependency[], onProgress?: (results: DocRes
       processWithConcurrency(mavenDeps, onlineMavenResolver, (res) => onProgress?.([...res]), found),
       processWithConcurrency(pubDeps, onlinePubResolver, (res) => onProgress?.([...res]), found),
       processWithConcurrency(bundlerDeps, onlineBundlerResolver, (res) => onProgress?.([...res]), found),
+      processWithConcurrency(nugetDeps, onlineNugetResolver, (res) => onProgress?.([...res]), found),
     ]);
 
     return found;

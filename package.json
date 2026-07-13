@@ -4,7 +4,7 @@
   "publisher": "watchdocs",
   "description": "Automatically detect dependencies and open their official documentation",
   "type": "commonjs",
-  "version": "0.3.5",
+  "version": "0.3.6",
   "repository": {
     "type": "git",
     "url": "https://github.com/csivitu/watchdocs"
@@ -28,7 +28,8 @@
     "onLanguage:java",
     "onLanguage:kotlin",
     "onLanguage:dart",
-    "onLanguage:ruby"
+    "onLanguage:ruby",
+    "onLanguage:csharp"
   ],
   "categories": [
     "Other"
@@ -83,7 +84,7 @@
       "watchdocs": [
         {
           "id": "watchdocs.sidebar",
-          "name": "Project Docs",
+          "name": "WatchDocs",
           "icon": "resources/watchdocs-v2.svg"
         }
       ]

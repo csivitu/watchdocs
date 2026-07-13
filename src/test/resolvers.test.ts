@@ -7,6 +7,7 @@ import { onlineCargoResolver } from "../core/resolver/online-cargo-resolver";
 import { onlineMavenResolver } from "../core/resolver/online-maven-resolver";
 import { onlinePubResolver } from "../core/resolver/online-pub-resolver";
 import { onlineBundlerResolver } from "../core/resolver/online-bundler-resolver";
+import { onlineNugetResolver } from "../core/resolver/online-nuget-resolver";
 import { Dependency } from "../models";
 
 suite("Online Resolvers", () => {
@@ -210,6 +211,30 @@ suite("Online Resolvers", () => {
     test("returns null on network error", async () => {
       mockError();
       const result = await onlineBundlerResolver(dep);
+      assert.strictEqual(result, null);
+    });
+  });
+
+  suite("nuget", () => {
+    const dep: Dependency = { name: "Newtonsoft.Json", version: "13.0.3", ecosystem: "nuget" };
+
+    test("resolves to nuget.org page on 200", async () => {
+      mockResponse(true, {});
+      const result = await onlineNugetResolver(dep);
+      assert.ok(result);
+      assert.strictEqual(result?.docUrl, "https://www.nuget.org/packages/Newtonsoft.Json");
+      assert.strictEqual(result?.source, "online-registry");
+    });
+
+    test("returns null on non-ok response", async () => {
+      mockResponse(false, {});
+      const result = await onlineNugetResolver(dep);
+      assert.strictEqual(result, null);
+    });
+
+    test("returns null on network error", async () => {
+      mockError();
+      const result = await onlineNugetResolver(dep);
       assert.strictEqual(result, null);
     });
   });

@@ -4,6 +4,19 @@ All notable changes to the WatchDocs extension will be documented in this file.
 
 This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.6] - 2026-07-13
+
+### Added
+- **C# / NuGet**: added ecosystem support (manifest parsing, online NuGet registry resolver, and C# namespace import hover detection)
+
+### Changed
+- **UI**: display blank instead of "unknown" for unresolved dependency versions and cleaned up Action suffixes in Tree View
+
+### Fixed
+- **Python**: handle PEP 508 environment markers and extras robustly in requirements and pyproject.toml array parsing
+
+---
+
 ## [0.3.5] - 2026-06-12
 
 ### Changed

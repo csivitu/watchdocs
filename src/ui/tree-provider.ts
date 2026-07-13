@@ -5,7 +5,7 @@ import { resolver } from "../core/resolver/resolver";
 import { scanWorkspace } from "../core/scanner/scanner";
 import { exportDependenciesAsMarkdown } from "../core/export/export-markdown";
 import { readFile } from "../core/reader/reader";
-import { parsePackageJson, parseRequirementsTxt, parsePyProjectToml, parseGoMod, parseCargotoml, parsePomXml, parsePubspecYaml, parseGemfile, parseUvLock } from "../core/parsers";
+import { parsePackageJson, parseRequirementsTxt, parsePyProjectToml, parseGoMod, parseCargotoml, parsePomXml, parsePubspecYaml, parseGemfile, parseUvLock, parseCsproj } from "../core/parsers";
 import { setScanResults } from "../core/cache/doc-cache";
 import { deduplicateDeps } from "../core/dedup";
 
@@ -17,6 +17,7 @@ const ECOSYSTEM_LABELS: Record<string, { label: string; icon: string }> = {
   maven: { label: "Java", icon: "coffee" },
   pub: { label: "Dart", icon: "device-mobile" },
   bundler: { label: "Ruby", icon: "ruby" },
+  nuget: { label: "C#", icon: "symbol-method" },
 };
 
 export class DocsTreeProvider implements vscode.TreeDataProvider<vscode.TreeItem> {
@@ -88,8 +89,10 @@ export class DocsTreeProvider implements vscode.TreeDataProvider<vscode.TreeItem
         deps = parsePomXml(content);
       } else if (manifest.type === "pub") {
         deps = parsePubspecYaml(content);
-      }else if (manifest.type === "bundler") {
+      } else if (manifest.type === "bundler") {
         deps = parseGemfile(content);
+      } else if (manifest.type === "nuget") {
+        deps = parseCsproj(content);
       }
 
       allDeps.push(...deps);
@@ -172,7 +175,7 @@ export class DocsTreeProvider implements vscode.TreeDataProvider<vscode.TreeItem
       
       quickPick.items = fuzzyResults.map(r => ({
         label: r.obj.name,
-        description: r.obj.version || "unknown",
+        description: (r.obj.version && r.obj.version !== "unknown") ? r.obj.version : "",
         detail: r.obj.docUrl || undefined
       }));
     });
@@ -223,25 +226,25 @@ export class DocsTreeProvider implements vscode.TreeDataProvider<vscode.TreeItem
     }
 
     const actionItems: vscode.TreeItem[] = [];
-    actionItems.push(new DependencyItem("Scan Dependencies", "Action", vscode.TreeItemCollapsibleState.None, {
+    actionItems.push(new DependencyItem("Scan Dependencies", "", vscode.TreeItemCollapsibleState.None, {
       command: "watchdocs.scan",
       title: "Scan Dependencies"
     }, "play"));
 
    if (this.resolvedResults && this.resolvedResults.length > 0) {
 
-  actionItems.push(new DependencyItem("Search Dependencies", "Action", vscode.TreeItemCollapsibleState.None, {
+  actionItems.push(new DependencyItem("Search Dependencies", "", vscode.TreeItemCollapsibleState.None, {
     command: "watchdocs.search",
     title: "Search Dependencies"
   }, "search"));
 
-  actionItems.push(new DependencyItem("Export Dependencies (.md)","Action",vscode.TreeItemCollapsibleState.None,{
+  actionItems.push(new DependencyItem("Export Dependencies (.md)","",vscode.TreeItemCollapsibleState.None,{
     command: "watchdocs.exportDependencies",
     title: "Export Dependencies"
   },"export"));
 
       if (this.searchQuery) {
-        actionItems.push(new DependencyItem("Clear Search", "Action", vscode.TreeItemCollapsibleState.None, {
+        actionItems.push(new DependencyItem("Clear Search", "", vscode.TreeItemCollapsibleState.None, {
           command: "watchdocs.clearSearch",
           title: "Clear Search"
         }, "close"));
@@ -350,8 +353,9 @@ class DependencyItem extends vscode.TreeItem {
     iconName: string = "library"
   ) {
     super(label, collapsibleState);
-    this.tooltip = `${this.label}-${this.version}`;
-    this.description = this.version;
+    const isUnknown = !this.version || this.version === "unknown";
+    this.tooltip = isUnknown ? this.label : `${this.label}-${this.version}`;
+    this.description = isUnknown ? "" : this.version;
     this.iconPath = new vscode.ThemeIcon(iconName);
   }
 }

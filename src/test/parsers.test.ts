@@ -9,6 +9,7 @@ import { parseCargotoml } from "../core/parsers/parse-cargo-toml";
 import { parsePomXml } from "../core/parsers/parse-pom-xml";
 import { parsePubspecYaml } from "../core/parsers/parse-pubspec-yaml";
 import { parseGemfile } from "../core/parsers/parse-gemfile";
+import { parseCsproj } from "../core/parsers/parse-csproj";
 
 suite("Parsers", () => {
 
@@ -95,6 +96,19 @@ coverage = "^7.0.0"
       const result = parsePyProjectToml(content);
       assert.strictEqual(result.length, 2);
       assert.strictEqual(result[0].type, "test");
+    });
+
+    test("parses optional-dependencies arrays correctly", () => {
+      const content = `[project.optional-dependencies]
+zig = [
+    "ziglang~=0.10.0",
+]
+`;
+      const result = parsePyProjectToml(content);
+      assert.strictEqual(result.length, 1);
+      assert.strictEqual(result[0].name, "ziglang");
+      assert.strictEqual(result[0].version, "0.10.0");
+      assert.strictEqual(result[0].type, "dev");
     });
   });
 
@@ -294,6 +308,62 @@ end
     test("handles empty content", () => {
       const result = parseGemfile("");
       assert.strictEqual(result.length, 0);
+    });
+  });
+
+  suite("C# — .csproj", () => {
+    const csprojContent = `<Project Sdk="Microsoft.NET.Sdk">
+  <ItemGroup>
+    <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
+    <PackageReference Include="Dapper" Version="2.1.28" />
+    <PackageReference Include="xunit" Version="2.7.0" />
+    <PackageReference Include="Microsoft.CodeAnalysis.Analyzers" Version="3.11.0" />
+    <PackageReference Include="Serilog">
+      <Version>3.1.1</Version>
+    </PackageReference>
+    <PackageReference Include="Microsoft.NET.Test.Sdk" />
+  </ItemGroup>
+</Project>`;
+
+    test("parses PackageReference with inline Version", () => {
+      const result = parseCsproj(csprojContent);
+      const newton = result.find(d => d.name === "Newtonsoft.Json");
+      assert.ok(newton);
+      assert.strictEqual(newton!.version, "13.0.3");
+      assert.strictEqual(newton!.ecosystem, "nuget");
+      assert.strictEqual(newton!.type, "prod");
+    });
+
+    test("classifies xunit as test", () => {
+      const result = parseCsproj(csprojContent);
+      const x = result.find(d => d.name === "xunit");
+      assert.ok(x);
+      assert.strictEqual(x!.type, "test");
+    });
+
+    test("classifies Analyzers as dev", () => {
+      const result = parseCsproj(csprojContent);
+      const a = result.find(d => d.name === "Microsoft.CodeAnalysis.Analyzers");
+      assert.ok(a);
+      assert.strictEqual(a!.type, "dev");
+    });
+
+    test("parses child-element Version", () => {
+      const result = parseCsproj(csprojContent);
+      const serilog = result.find(d => d.name === "Serilog");
+      assert.ok(serilog);
+      assert.strictEqual(serilog!.version, "3.1.1");
+    });
+
+    test("handles missing Version (null)", () => {
+      const result = parseCsproj(csprojContent);
+      const sdk = result.find(d => d.name === "Microsoft.NET.Test.Sdk");
+      assert.ok(sdk);
+      assert.strictEqual(sdk!.version, null);
+    });
+
+    test("handles empty content", () => {
+      assert.strictEqual(parseCsproj("").length, 0);
     });
   });
 

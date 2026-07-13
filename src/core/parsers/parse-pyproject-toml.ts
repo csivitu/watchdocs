@@ -98,54 +98,33 @@ export function parsePyProjectToml(content: string): Dependency[] {
       }
     }
 
-    
     if (
       section.startsWith(
         "project.optional-dependencies"
       )
     ) {
-
-      const groupName =
-        section.split(".").pop()?.toLowerCase();
-
-      let type: "dev" | "test" =
-        "dev";
-
-      if (
-        groupName?.includes("test")
-      ) {
+      const groupName = section.split(".").pop()?.toLowerCase();
+      let type: "dev" | "test" = "dev";
+      if (groupName?.includes("test")) {
         type = "test";
       }
-
       const depMatch = line.match(/^([\w\-.]+)\s*=\s*(.+)$/);
-
       if (depMatch) {
-
-        result.push({
-          name: depMatch[1],
-          version: depMatch[2],
-          ecosystem: "pip",
-          type
-        });
-      }
-    }
-
-    if (section === "dependency-groups") {
-      const groupMatch = line.match(/^(\w+)\s*=\s*\[([^\]]*)\]/);
-      if (groupMatch) {
-        const groupName = groupMatch[1].toLowerCase();
-        const type: "dev" | "test" = groupName.includes("test") ? "test" : "dev";
-        const items = groupMatch[2]
-          .split(",")
-          .map(s => s.trim().replace(/^["']|["']$/g, ""))
-          .filter(Boolean);
-        for (const dep of items) {
-          const [name, version] = split(dep);
-          result.push({ name, version: version || "unknown", ecosystem: "pip", type });
+        const val = depMatch[2].trim();
+        if (val !== "[") {
+          result.push({
+            name: depMatch[1],
+            version: val.replace(/^["']|["']$/g, ""),
+            ecosystem: "pip",
+            type
+          });
         }
       }
     }
   }
+
+  result.push(...parseArraySection(content, "project.optional-dependencies"));
+  result.push(...parseArraySection(content, "dependency-groups"));
 
   return result;
 }
@@ -153,10 +132,56 @@ export function parsePyProjectToml(content: string): Dependency[] {
 function split(
   dep: string
 ): [string, string | null] {
+  const lhs = dep.split(";")[0].trim();
+  const nameMatch = lhs.match(/^([\w\-.]+)/);
+  if (!nameMatch) {
+    return [dep, null];
+  }
+  const name = nameMatch[1];
+  const withoutExtras = lhs.replace(/\[[^\]]*\]/g, "").trim();
+  const versionSpec = withoutExtras.slice(name.length).trim();
+  const cleanVersion = versionSpec.replace(/^[=>!<~~\s]+/g, "").trim() || null;
+  return [name, cleanVersion];
+}
 
-  const m = dep.match(/^([\w\-.]+)(.*)$/);
-
-  return m
-    ? [m[1], m[2]?.trim() || null]
-    : [dep, null];
+function parseArraySection(content: string, sectionHeader: string): Dependency[] {
+  const result: Dependency[] = [];
+  const sectionEscaped = sectionHeader.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  const sectionRegex = new RegExp(`\\[${sectionEscaped}\\]([\\s\\S]*?)(?=\\r?\\n\\s*\\[|$)`);
+  const match = content.match(sectionRegex);
+  
+  if (!match) {
+    return [];
+  }
+  
+  const sectionContent = match[1];
+  const groupRegex = /([\w\-]+)\s*=\s*\[([\s\S]*?)\]/g;
+  let groupMatch;
+  while ((groupMatch = groupRegex.exec(sectionContent)) !== null) {
+    const groupName = groupMatch[1].toLowerCase();
+    const arrayContent = groupMatch[2];
+    const type: "dev" | "test" = groupName.includes("test") ? "test" : "dev";
+    
+    const lines = arrayContent.split("\n").map(line => {
+      const commentIndex = line.indexOf("#");
+      return commentIndex !== -1 ? line.slice(0, commentIndex) : line;
+    });
+    
+    const deps = lines.join(" ")
+      .split(",")
+      .map(item => item.trim().replace(/^["']|["']$/g, "").trim())
+      .filter(Boolean);
+      
+    for (const dep of deps) {
+      const [name, version] = split(dep);
+      result.push({
+        name,
+        version: version || "unknown",
+        ecosystem: "pip",
+        type
+      });
+    }
+  }
+  
+  return result;
 }

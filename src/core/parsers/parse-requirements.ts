@@ -20,31 +20,23 @@ export function parseRequirementsTxt(content: string): Dependency[] {
       continue;
     }
 
-    let name = trimmed;
-    let version = "unknown";
-
-    for (const op of operators) {
-
-      if (trimmed.includes(op)) {
-
-        const parts =
-          trimmed.split(op);
-
-        name = parts[0].trim();
-        version = parts[1].trim();
-
-        break;
-      }
+    const lhs = trimmed.split(";")[0].trim();
+    if (!lhs) {
+      continue;
     }
 
-    
-    let type: "prod" | "dev" | "test" =
-      "prod";
+    const nameMatch = lhs.match(/^([\w\-.]+)/);
+    if (!nameMatch) {
+      continue;
+    }
+    const name = nameMatch[1];
 
-    name = name.replace(/\[.*\]/, "");
+    const withoutExtras = lhs.replace(/\[[^\]]*\]/g, "").trim();
+    const versionSpec = withoutExtras.slice(name.length).trim();
+    const version = versionSpec.replace(/^[=>!<~~\s]+/g, "").trim() || "unknown";
 
-    const lowerName =
-      name.toLowerCase();
+    let type: "prod" | "dev" | "test" = "prod";
+    const lowerName = name.toLowerCase();
 
     
     if (

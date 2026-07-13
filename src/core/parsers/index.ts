@@ -8,3 +8,4 @@ export * from "./parse-pubspec-yaml";
 export * from "./parse-pyproject-toml";
 export * from "./parse-gemfile";
 export * from "./parse-uv-lock";
+export * from "./parse-csproj";
