@@ -153,10 +153,14 @@ export function parsePyProjectToml(content: string): Dependency[] {
 function split(
   dep: string
 ): [string, string | null] {
-
-  const m = dep.match(/^([\w\-.]+)(.*)$/);
-
-  return m
-    ? [m[1], m[2]?.trim() || null]
-    : [dep, null];
+  const lhs = dep.split(";")[0].trim();
+  const nameMatch = lhs.match(/^([\w\-.]+)/);
+  if (!nameMatch) {
+    return [dep, null];
+  }
+  const name = nameMatch[1];
+  const withoutExtras = lhs.replace(/\[[^\]]*\]/g, "").trim();
+  const versionSpec = withoutExtras.slice(name.length).trim();
+  const cleanVersion = versionSpec.replace(/^[=>!<~~\s]+/g, "").trim() || null;
+  return [name, cleanVersion];
 }
