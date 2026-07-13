@@ -226,25 +226,25 @@ export class DocsTreeProvider implements vscode.TreeDataProvider<vscode.TreeItem
     }
 
     const actionItems: vscode.TreeItem[] = [];
-    actionItems.push(new DependencyItem("Scan Dependencies", "Action", vscode.TreeItemCollapsibleState.None, {
+    actionItems.push(new DependencyItem("Scan Dependencies", "", vscode.TreeItemCollapsibleState.None, {
       command: "watchdocs.scan",
       title: "Scan Dependencies"
     }, "play"));
 
    if (this.resolvedResults && this.resolvedResults.length > 0) {
 
-  actionItems.push(new DependencyItem("Search Dependencies", "Action", vscode.TreeItemCollapsibleState.None, {
+  actionItems.push(new DependencyItem("Search Dependencies", "", vscode.TreeItemCollapsibleState.None, {
     command: "watchdocs.search",
     title: "Search Dependencies"
   }, "search"));
 
-  actionItems.push(new DependencyItem("Export Dependencies (.md)","Action",vscode.TreeItemCollapsibleState.None,{
+  actionItems.push(new DependencyItem("Export Dependencies (.md)","",vscode.TreeItemCollapsibleState.None,{
     command: "watchdocs.exportDependencies",
     title: "Export Dependencies"
   },"export"));
 
       if (this.searchQuery) {
-        actionItems.push(new DependencyItem("Clear Search", "Action", vscode.TreeItemCollapsibleState.None, {
+        actionItems.push(new DependencyItem("Clear Search", "", vscode.TreeItemCollapsibleState.None, {
           command: "watchdocs.clearSearch",
           title: "Clear Search"
         }, "close"));

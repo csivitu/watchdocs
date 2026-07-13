@@ -2,7 +2,7 @@
 
 ![version](https://img.shields.io/badge/version-0.3.5-blue)
 
-> Auto-detect project dependencies across 7 ecosystems and open their official documentation — from sidebar, search, or inline hover.
+> Auto-detect project dependencies across 8 ecosystems and open their official documentation — from sidebar, search, or inline hover.
 
 WatchDocs is a VS Code extension that eliminates the friction of hunting down documentation. It scans your workspace for dependency manifest files, resolves every package to its official documentation URL, and gives you instant access through a sidebar, a fuzzy search, or an inline hover on import statements.
 
@@ -21,6 +21,7 @@ WatchDocs is a VS Code extension that eliminates the friction of hunting down do
 | maven | `pom.xml` | Java, Kotlin |
 | pub | `pubspec.yaml` | Dart |
 | bundler | `Gemfile` | Ruby |
+| nuget | `.csproj` | C# |
 
 ---
 
@@ -41,8 +42,8 @@ WatchDocs automatically detects all manifest files in your workspace, including 
 ### Documentation Resolution
 Resolution follows a two-tier pipeline for speed and coverage:
 
-1. **Local registry** — 280+ pre-mapped packages across 7 JSON files, resolved instantly with no network call. This covers popular packages like `react`, `express`, `django`, `flask`, `serde`, `spring-boot`, and more.
-2. **Online registry** — If a package is not in the local registry, WatchDocs fetches it from the official registry (npmjs.org, PyPI, RubyGems.org, crates.io, Maven Central, pub.dev, or proxy.golang.org). A 16-concurrency worker pool resolves up to 16 packages in parallel with a 5000ms timeout per request.
+1. **Local registry** — 280+ pre-mapped packages across 8 JSON files, resolved instantly with no network call. This covers popular packages like `react`, `express`, `django`, `flask`, `serde`, `spring-boot`, and more.
+2. **Online registry** — If a package is not in the local registry, WatchDocs fetches it from the official registry (npmjs.org, PyPI, RubyGems.org, crates.io, Maven Central, pub.dev, nuget.org, or proxy.golang.org). A 16-concurrency worker pool resolves up to 16 packages in parallel with a 5000ms timeout per request.
 
 Results are cached in a shared in-memory store. If manifest files have not changed since the last scan, the resolver is skipped entirely, reusing cached results for zero-wait refresh.
 
@@ -77,6 +78,7 @@ Supports 8 languages:
 | Java / Kotlin | `import com.package.Class` |
 | Dart | `import 'package:pkg/...'` |
 | Ruby | `require 'pkg'`, `gem 'pkg'` |
+| C# | `using Namespace;` |
 
 The hover resolution uses the same shared cache as the sidebar scan. Once you have scanned your project, hovering over any recognized import is instant — no network call needed.
 
@@ -129,12 +131,12 @@ All commands are accessible via the Command Palette (`Ctrl+Shift+P`).
 | Module | Purpose |
 |--------|---------|
 | `scanner.ts` | Workspace file discovery with glob patterns and exclusions |
-| `parsers/` | 8 parser functions (one per manifest type) |
+| `parsers/` | 10 parser functions (one per manifest type) |
 | `import-detector.ts` | Import statement regex detection for 8 languages |
 | `dedup.ts` | Deduplicate deps by ecosystem:name across multiple manifests |
 | `resolver.ts` | Two-tier orchestration, 16-worker pool, parallel ecosystems |
 | `registry-resolver.ts` | Local JSON registry lookup with caching |
-| `online-*.ts` | 7 online resolvers (npm, pip, go, cargo, maven, pub, bundler) |
+| `online-*.ts` | 8 online resolvers (npm, pip, go, cargo, maven, pub, bundler, nuget) |
 | `doc-cache.ts` | Shared in-memory cache between scan and hover |
 | `tree-provider.ts` | Sidebar TreeDataProvider with categorized sections |
 | `hover-provider.ts` | Inline HoverProvider with import detection |
@@ -170,8 +172,8 @@ npm test
 ```
 
 Tests use Mocha. Test files live in `src/test/`:
-- `parsers.test.ts` — all 8 manifest parsers (package.json, requirements.txt, pyproject.toml, uv.lock, go.mod, Cargo.toml, pom.xml, pubspec.yaml, Gemfile)
-- `resolvers.test.ts` — all 7 online resolvers with mocked fetch (npm, PyPI, Go, crates.io, Maven Central, pub.dev, RubyGems)
+- `parsers.test.ts` — all 10 manifest parsers (package.json, requirements.txt, pyproject.toml, uv.lock, go.mod, Cargo.toml, pom.xml, pubspec.yaml, Gemfile, .csproj)
+- `resolvers.test.ts` — all 8 online resolvers with mocked fetch (npm, PyPI, Go, crates.io, Maven Central, pub.dev, RubyGems, NuGet)
 - `core.test.ts` — doc-cache and dependency deduplication
 - `hover.test.ts` — import statement detection for 8 languages
 
