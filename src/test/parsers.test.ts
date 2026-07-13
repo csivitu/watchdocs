@@ -97,6 +97,19 @@ coverage = "^7.0.0"
       assert.strictEqual(result.length, 2);
       assert.strictEqual(result[0].type, "test");
     });
+
+    test("parses optional-dependencies arrays correctly", () => {
+      const content = `[project.optional-dependencies]
+zig = [
+    "ziglang~=0.10.0",
+]
+`;
+      const result = parsePyProjectToml(content);
+      assert.strictEqual(result.length, 1);
+      assert.strictEqual(result[0].name, "ziglang");
+      assert.strictEqual(result[0].version, "0.10.0");
+      assert.strictEqual(result[0].type, "dev");
+    });
   });
 
   suite("pip — uv.lock", () => {
