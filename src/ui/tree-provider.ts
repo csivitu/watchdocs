@@ -175,7 +175,7 @@ export class DocsTreeProvider implements vscode.TreeDataProvider<vscode.TreeItem
       
       quickPick.items = fuzzyResults.map(r => ({
         label: r.obj.name,
-        description: r.obj.version || "unknown",
+        description: (r.obj.version && r.obj.version !== "unknown") ? r.obj.version : "",
         detail: r.obj.docUrl || undefined
       }));
     });
@@ -353,8 +353,9 @@ class DependencyItem extends vscode.TreeItem {
     iconName: string = "library"
   ) {
     super(label, collapsibleState);
-    this.tooltip = `${this.label}-${this.version}`;
-    this.description = this.version;
+    const isUnknown = !this.version || this.version === "unknown";
+    this.tooltip = isUnknown ? this.label : `${this.label}-${this.version}`;
+    this.description = isUnknown ? "" : this.version;
     this.iconPath = new vscode.ThemeIcon(iconName);
   }
 }
